@@ -1,0 +1,354 @@
+services:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # POSTGRES — main (n8n · Evolution · freight_db)
+  # ─────────────────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB:       ${POSTGRES_DB}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - freight-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # POSTGRES INIT — creates postiz_db on first boot
+  # ─────────────────────────────────────────────────────────────────────────
+  postgres-init:
+    image: postgres:16-alpine
+    container_name: postgres-init
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+    command: >
+      sh -c "
+        psql -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 'CREATE DATABASE postiz_db;' || true &&
+        echo 'All databases ready.'
+      "
+    networks:
+      - freight-net
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # POSTGRES — Temporal dedicated
+  # ─────────────────────────────────────────────────────────────────────────
+  temporal-postgres:
+    image: postgres:16-alpine
+    container_name: temporal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB:       temporal
+    volumes:
+      - ./data/temporal-postgres:/var/lib/postgresql/data
+    networks:
+      - temporal-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal -d temporal"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # ELASTICSEARCH — Temporal visibility
+  # ─────────────────────────────────────────────────────────────────────────
+  temporal-elasticsearch:
+    image: elasticsearch:7.17.27
+    container_name: temporal-elasticsearch
+    restart: unless-stopped
+    environment:
+      - cluster.routing.allocation.disk.threshold_enabled=true
+      - cluster.routing.allocation.disk.watermark.low=512mb
+      - cluster.routing.allocation.disk.watermark.high=256mb
+      - cluster.routing.allocation.disk.watermark.flood_stage=128mb
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+      - xpack.security.enabled=false
+    networks:
+      - temporal-net
+    volumes:
+      - ./data/temporal-elasticsearch:/usr/share/elasticsearch/data
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # REDIS
+  # ─────────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    networks:
+      - freight-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # EVOLUTION GO — WhatsApp API  (api.freightit.in)
+  # ─────────────────────────────────────────────────────────────────────────
+  evolution-go:
+    image: evoapicloud/evolution-go:latest
+    container_name: evolution-go
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - SERVER_PORT=8080
+      - SERVER_URL=https://${EVO_HOST}
+      - CLIENT_NAME=evolution_freight
+      - GLOBAL_API_KEY=${AUTHENTICATION_API_KEY}
+      - POSTGRES_AUTH_DB=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      - POSTGRES_USERS_DB=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/freight_users_db?sslmode=disable
+      - DATABASE_SAVE_MESSAGES=false
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - freight-net
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # N8N — Workflow automation  (automation.freightit.in)
+  # ─────────────────────────────────────────────────────────────────────────
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=${WEBHOOK_URL}
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=${EXECUTIONS_DATA_SAVE_ON_SUCCESS}
+      - EXECUTIONS_DATA_MAX_AGE=${EXECUTIONS_DATA_MAX_AGE}
+      - N8N_EXECUTIONS_PROCESS=${N8N_EXECUTIONS_PROCESS}
+    volumes:
+      - ./data/n8n:/home/node/.n8n
+    networks:
+      - freight-net
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # POCKETBASE — Freight It  (pb.freightit.in → 8090)
+  # ─────────────────────────────────────────────────────────────────────────
+  pocketbase-freightit:
+    image: ghcr.io/muchobien/pocketbase:latest
+    container_name: pocketbase-freightit
+    restart: unless-stopped
+    entrypoint:
+      - /usr/local/bin/pocketbase
+      - serve
+      - --http=0.0.0.0:8090
+      - --dir=/pb_data
+      - --origins=*
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./data/pocketbase-freightit:/pb_data
+    networks:
+      - freight-net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # POCKETBASE — SureShift ERP  (pb.sureshift.in → 8091)
+  #
+  # Custom build from ./sureshift/pocketbase/ — adds:
+  #   • ERP schema migrations  (11 collections auto-created on first boot)
+  #   • Server-side hooks      (auto-number SS-ENQ-NDLH-2627-0001 etc.)
+  #   • Seeds super admin account on first boot
+  #
+  # ⚠️  Data volume (./data/pocketbase-sureshift) is preserved on rebuild.
+  #     Migrations run only once — idempotent, safe to redeploy.
+  # ─────────────────────────────────────────────────────────────────────────
+  pocketbase-sureshift:
+    build:
+      context: ./sureshift/pocketbase
+      dockerfile: Dockerfile
+    container_name: pocketbase-sureshift
+    restart: unless-stopped
+    entrypoint:
+      - /usr/local/bin/pocketbase
+      - serve
+      - --http=0.0.0.0:8091
+      - --dir=/pb_data
+      - --migrationsDir=/pb_migrations
+      - --hooksDir=/pb_hooks
+      - --origins=*
+    ports:
+      - "8091:8091"
+    environment:
+      - PB_SUPER_ADMIN_EMAIL=${PB_SURESHIFT_ADMIN_EMAIL}
+      - PB_SUPER_ADMIN_PASS=${PB_SURESHIFT_ADMIN_PASS}
+      - PB_ENCRYPTION_KEY=${PB_ENCRYPTION_KEY}
+    volumes:
+      - ./data/pocketbase-sureshift:/pb_data
+    networks:
+      - freight-net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8091/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # SURESHIFT ERP FRONTEND  (erp.sureshift.in → port 3000)
+  #
+  # Vite production build inside Docker → served by Nginx on port 80.
+  # VITE_PB_URL is baked in at build time — the browser calls PocketBase
+  # via the public Cloudflare subdomain https://pb.sureshift.in
+  #
+  # Add in Cloudflare Dashboard → Zero Trust → Tunnels → Public Hostname:
+  #   erp.sureshift.in  →  http://sureshift-erp:80
+  # ─────────────────────────────────────────────────────────────────────────
+  sureshift-erp:
+    build:
+      context: ./sureshift/frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_PB_URL=https://${PB_SURESHIFT_HOST}
+    container_name: sureshift-erp
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      pocketbase-sureshift:
+        condition: service_healthy
+    networks:
+      - freight-net
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # TEMPORAL — Postiz workflow engine
+  # ─────────────────────────────────────────────────────────────────────────
+  temporal:
+    image: temporalio/auto-setup:1.28.1
+    container_name: temporal
+    restart: unless-stopped
+    ports:
+      - "7233:7233"
+    depends_on:
+      - temporal-postgres
+      - temporal-elasticsearch
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=temporal-postgres
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+      - ENABLE_ES=true
+      - ES_SEEDS=temporal-elasticsearch
+      - ES_VERSION=v7
+    volumes:
+      - ./config/temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
+    networks:
+      - temporal-net
+      - freight-net
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # POSTIZ — Social media scheduler  (social.freightit.in)
+  # ─────────────────────────────────────────────────────────────────────────
+  postiz:
+    image: ghcr.io/gitroomhq/postiz-app:latest
+    container_name: postiz
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      temporal:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/postiz_db?sslmode=disable
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${POSTIZ_SECRET}
+      - MAIN_URL=https://${POSTIZ_HOST}
+      - FRONTEND_URL=https://${POSTIZ_HOST}
+      - NEXT_PUBLIC_BACKEND_URL=https://${POSTIZ_HOST}/api
+      - BACKEND_INTERNAL_URL=http://localhost:3000
+      - TEMPORAL_ADDRESS=temporal:7233
+      - IS_GENERAL=true
+      - DISABLE_REGISTRATION=false
+      - RUN_CRON=true
+      - NX_ADD_PLUGINS=false
+      - STORAGE_PROVIDER=local
+      - UPLOAD_DIRECTORY=/uploads
+      - NEXT_PUBLIC_UPLOAD_DIRECTORY=/uploads
+      - FACEBOOK_APP_ID=${FACEBOOK_APP_ID}
+      - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET}
+      - THREADS_APP_ID=${THREADS_APP_ID}
+      - THREADS_APP_SECRET=${THREADS_APP_SECRET}
+      - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
+      - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}
+    volumes:
+      - ./data/postiz/uploads:/uploads
+    networks:
+      - freight-net
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # CLOUDFLARE TUNNEL
+  # sureshift-erp added to depends_on so tunnel waits for frontend to start
+  # ─────────────────────────────────────────────────────────────────────────
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - n8n
+      - evolution-go
+      - postiz
+      - pocketbase-freightit
+      - pocketbase-sureshift
+      - sureshift-erp
+    networks:
+      - freight-net
+
+networks:
+  freight-net:
+    driver: bridge
+  temporal-net:
+    driver: bridge

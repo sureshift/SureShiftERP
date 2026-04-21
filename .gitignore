@@ -1,0 +1,31 @@
+# ── Secrets — NEVER commit ───────────────────────────────────────────────────
+.env
+
+# ── PocketBase data (databases, uploads, logs) ───────────────────────────────
+data/
+data/postgres/
+data/temporal-postgres/
+data/temporal-elasticsearch/
+data/pocketbase-freightit/
+data/pocketbase-sureshift/
+data/n8n/
+data/postiz/
+
+# ── Frontend build artifacts ─────────────────────────────────────────────────
+sureshift/frontend/node_modules/
+sureshift/frontend/dist/
+sureshift/frontend/.vite/
+
+# ── Temporal config (auto-generated) ─────────────────────────────────────────
+config/
+
+# ── OS / Editor ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
