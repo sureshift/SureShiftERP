@@ -1,41 +1,40 @@
 /// <reference path="../pb_data/types.d.ts" />
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  SureShift ERP — PocketBase Hooks
-//  Runs server-side on every PocketBase startup.
-//  Handles: admin seeding · document auto-numbering · health route
+//  SureShift ERP — PocketBase Hooks  (v0.23+ API)
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── 1. Seed super admin + default settings on very first boot ────────────────
-onAfterBootstrap((e) => {
-  // Check if any users exist already
+onBootstrap((e) => {
+  e.next();
+
   let existing = [];
   try {
-    existing = $app.dao().findRecordsByFilter("users", "id != ''", "-created", 1, 0);
-  } catch (_) { return; } // collection not yet ready
+    existing = $app.findRecordsByFilter("users", "id != ''", "-created", 1, 0);
+  } catch (_) { return; }
 
-  if (existing.length > 0) return; // already seeded
+  if (existing.length > 0) return;
 
   $app.logger().info("[SureShift] First boot — seeding super admin...");
 
   try {
-    const col = $app.dao().findCollectionByNameOrId("users");
+    const col = $app.findCollectionByNameOrId("users");
     const rec = new Record(col);
 
-    const adminEmail = process.env.PB_SUPER_ADMIN_EMAIL || "admin@sureshift.in";
-    const adminPass  = process.env.PB_SUPER_ADMIN_PASS  || "SureShift@2026!";
+    const adminEmail = $os.getenv("PB_SUPER_ADMIN_EMAIL") || "admin@sureshift.in";
+    const adminPass  = $os.getenv("PB_SUPER_ADMIN_PASS")  || "RaViGo1140";
 
     rec.setPassword(adminPass);
-    rec.Set("username",        "superadmin");
-    rec.Set("email",           adminEmail);
-    rec.Set("emailVisibility", true);
-    rec.Set("verified",        true);
-    rec.Set("name",            "Suresh Admin");
-    rec.Set("phone",           "9073291732");
-    rec.Set("role",            "super_admin");
-    rec.Set("branch",          "NDLH");
-    rec.Set("status",          "active");
-    rec.Set("permissions", {
+    rec.set("username",        "superadmin");
+    rec.set("email",           adminEmail);
+    rec.set("emailVisibility", true);
+    rec.set("verified",        true);
+    rec.set("name",            "Suresh Admin");
+    rec.set("phone",           "9073291732");
+    rec.set("role",            "super_admin");
+    rec.set("branch",          "NDLH");
+    rec.set("status",          "active");
+    rec.set("permissions", {
       enquiries:  ["view","create","edit","delete","assign"],
       survey:     ["view","create","edit","report"],
       quotations: ["view","create","edit","send","approve"],
@@ -49,21 +48,20 @@ onAfterBootstrap((e) => {
       settings:   ["view","edit"],
     });
 
-    $app.dao().saveRecord(rec);
+    $app.save(rec);
     $app.logger().info("[SureShift] Super admin created: " + adminEmail);
   } catch (err) {
-    $app.logger().error("[SureShift] Failed to seed admin: " + err);
+    $app.logger().error("[SureShift] Failed to seed admin: " + String(err));
     return;
   }
 
   // Seed default app settings
   try {
-    const settingsCol = $app.dao().findCollectionByNameOrId("app_settings");
+    const settingsCol = $app.findCollectionByNameOrId("app_settings");
 
     const defaults = [
       {
-        key: "company",
-        category: "company",
+        key: "company", category: "company",
         value: {
           name:    "Sure Shift Relocation Services Pvt. Ltd.",
           gst:     "07AABCS1234A1Z1",
@@ -74,143 +72,137 @@ onAfterBootstrap((e) => {
         },
       },
       {
-        key: "notifications",
-        category: "notifications",
-        value: {
-          whatsapp: true, email: true, sms: false,
-          autoFollowUp: true, readReceipts: true,
-        },
+        key: "notifications", category: "notifications",
+        value: { whatsapp:true, email:true, sms:false, autoFollowUp:true, readReceipts:true },
       },
       {
-        key: "billing",
-        category: "billing",
-        value: {
-          gstRate: 18, tokenMin: 1000,
-          paymentTermsLocal:       "full_on_delivery",
-          paymentTermsInterstate:  "80_20",
-        },
+        key: "billing", category: "billing",
+        value: { gstRate:18, tokenMin:1000, paymentTermsLocal:"full_on_delivery", paymentTermsInterstate:"80_20" },
       },
     ];
 
     defaults.forEach((d) => {
       const r = new Record(settingsCol);
-      r.Set("key",      d.key);
-      r.Set("value",    d.value);
-      r.Set("category", d.category);
-      $app.dao().saveRecord(r);
+      r.set("key",      d.key);
+      r.set("value",    d.value);
+      r.set("category", d.category);
+      $app.save(r);
     });
 
     $app.logger().info("[SureShift] Default settings seeded.");
   } catch (err) {
-    $app.logger().error("[SureShift] Failed to seed settings: " + err);
+    $app.logger().error("[SureShift] Failed to seed settings: " + String(err));
   }
 });
 
-// ── 2. Auto-generate Enquiry number before create ────────────────────────────
-// Format: SS-ENQ-NDLH-2627-0001  (increments per branch+fy)
-onRecordBeforeCreateRequest((e) => {
-  if (e.record.GetString("enq_number") !== "") return; // already set
+// ── 2. Auto-generate Enquiry number ──────────────────────────────────────────
+onRecordCreate((e) => {
+  if (e.record.getString("enq_number") !== "") return e.next();
 
-  const branch = e.record.GetString("branch") || "NDLH";
-  const fy     = e.record.GetString("fy")     || "2627";
+  const branch = e.record.getString("branch") || "NDLH";
+  const fy     = e.record.getString("fy")     || "2627";
 
   try {
-    const existing = $app.dao().findRecordsByFilter(
-      "enquiries",
-      `branch = "${branch}" && fy = "${fy}"`,
-      "-created", 0, 0
+    const existing = $app.findRecordsByFilter(
+      "enquiries", `branch = "${branch}" && fy = "${fy}"`, "-created", 0, 0
     );
     const seq = String(existing.length + 1).padStart(4, "0");
-    e.record.Set("enq_number", `SS-ENQ-${branch}-${fy}-${seq}`);
-    e.record.Set("seq", seq);
+    e.record.set("enq_number", `SS-ENQ-${branch}-${fy}-${seq}`);
+    e.record.set("seq", seq);
   } catch (err) {
-    $app.logger().error("[SureShift] Enquiry numbering failed: " + err);
+    $app.logger().error("[SureShift] Enquiry numbering failed: " + String(err));
   }
+
+  return e.next();
 }, "enquiries");
 
-// ── 3. Auto-generate Survey number before create ─────────────────────────────
-// Derives branch/fy/seq from linked enquiry → SS-SRV-NDLH-2627-0001
-onRecordBeforeCreateRequest((e) => {
-  if (e.record.GetString("survey_number") !== "") return;
+// ── 3. Auto-generate Survey number ───────────────────────────────────────────
+onRecordCreate((e) => {
+  if (e.record.getString("survey_number") !== "") return e.next();
 
   try {
-    const enqId = e.record.GetString("enquiry");
-    const enq   = $app.dao().findRecordById("enquiries", enqId);
-    const branch = enq.GetString("branch");
-    const fy     = enq.GetString("fy");
-    const seq    = enq.GetString("seq");
-    e.record.Set("survey_number", `SS-SRV-${branch}-${fy}-${seq}`);
+    const enq    = $app.findRecordById("enquiries", e.record.getString("enquiry_id"));
+    const branch = enq.getString("branch");
+    const fy     = enq.getString("fy");
+    const seq    = enq.getString("seq");
+    e.record.set("survey_number", `SS-SRV-${branch}-${fy}-${seq}`);
   } catch (err) {
-    $app.logger().error("[SureShift] Survey numbering failed: " + err);
+    $app.logger().error("[SureShift] Survey numbering failed: " + String(err));
   }
+
+  return e.next();
 }, "surveys");
 
-// ── 4. Auto-generate Quotation number before create ──────────────────────────
-// SS-QUOT-NDLH-2627-0001  (revision appended by API when revising)
-onRecordBeforeCreateRequest((e) => {
-  if (e.record.GetString("quot_number") !== "") return;
+// ── 4. Auto-generate Quotation number ────────────────────────────────────────
+onRecordCreate((e) => {
+  if (e.record.getString("quot_number") !== "") return e.next();
 
   try {
-    const enqId = e.record.GetString("enquiry");
-    const enq   = $app.dao().findRecordById("enquiries", enqId);
-    const branch = enq.GetString("branch");
-    const fy     = enq.GetString("fy");
-    const seq    = enq.GetString("seq");
-    const rev    = e.record.GetInt("revisions") || 0;
+    const enq    = $app.findRecordById("enquiries", e.record.getString("enquiry_id"));
+    const branch = enq.getString("branch");
+    const fy     = enq.getString("fy");
+    const seq    = enq.getString("seq");
+    const rev    = e.record.getInt("revisions") || 0;
     const suffix = rev > 0 ? `/${rev}` : "";
     const baseId = `SS-QUOT-${branch}-${fy}-${seq}`;
-    e.record.Set("quot_number", baseId + suffix);
-    e.record.Set("base_id",    baseId);
+    e.record.set("quot_number", baseId + suffix);
+    e.record.set("base_id",    baseId);
   } catch (err) {
-    $app.logger().error("[SureShift] Quotation numbering failed: " + err);
+    $app.logger().error("[SureShift] Quotation numbering failed: " + String(err));
   }
+
+  return e.next();
 }, "quotations");
 
-// ── 5. Auto-generate CFR number before create ────────────────────────────────
-onRecordBeforeCreateRequest((e) => {
-  if (e.record.GetString("cfr_number") !== "") return;
+// ── 5. Auto-generate CFR number ──────────────────────────────────────────────
+onRecordCreate((e) => {
+  if (e.record.getString("cfr_number") !== "") return e.next();
 
   try {
-    const enqId = e.record.GetString("enquiry");
-    const enq   = $app.dao().findRecordById("enquiries", enqId);
-    e.record.Set("cfr_number",
-      `SS-CFR-${enq.GetString("branch")}-${enq.GetString("fy")}-${enq.GetString("seq")}`);
+    const enq = $app.findRecordById("enquiries", e.record.getString("enquiry_id"));
+    e.record.set("cfr_number",
+      `SS-CFR-${enq.getString("branch")}-${enq.getString("fy")}-${enq.getString("seq")}`);
   } catch (err) {
-    $app.logger().error("[SureShift] CFR numbering failed: " + err);
+    $app.logger().error("[SureShift] CFR numbering failed: " + String(err));
   }
+
+  return e.next();
 }, "cfr");
 
-// ── 6. Auto-generate Invoice number before create ────────────────────────────
-onRecordBeforeCreateRequest((e) => {
-  if (e.record.GetString("inv_number") !== "") return;
+// ── 6. Auto-generate Invoice number ──────────────────────────────────────────
+onRecordCreate((e) => {
+  if (e.record.getString("inv_number") !== "") return e.next();
 
   try {
-    const cfrId = e.record.GetString("cfr");
-    const cfr   = $app.dao().findRecordById("cfr", cfrId);
-    const enq   = $app.dao().findRecordById("enquiries", cfr.GetString("enquiry"));
-    e.record.Set("inv_number",
-      `SS-INV-${enq.GetString("branch")}-${enq.GetString("fy")}-${enq.GetString("seq")}`);
+    const cfr = $app.findRecordById("cfr", e.record.getString("cfr_id"));
+    const enq = $app.findRecordById("enquiries", cfr.getString("enquiry_id"));
+    e.record.set("inv_number",
+      `SS-INV-${enq.getString("branch")}-${enq.getString("fy")}-${enq.getString("seq")}`);
   } catch (err) {
-    $app.logger().error("[SureShift] Invoice numbering failed: " + err);
+    $app.logger().error("[SureShift] Invoice numbering failed: " + String(err));
   }
+
+  return e.next();
 }, "invoices");
 
-// ── 7. Auto-generate Support ticket number before create ─────────────────────
-onRecordBeforeCreateRequest((e) => {
-  if (e.record.GetString("ticket_no") !== "") return;
+// ── 7. Auto-generate Support ticket number ───────────────────────────────────
+onRecordCreate((e) => {
+  if (e.record.getString("ticket_no") !== "") return e.next();
 
   try {
-    const all = $app.dao().findRecordsByFilter("tickets", "id != ''", "-created", 0, 0);
-    const seq  = String(all.length + 1).padStart(4, "0");
-    e.record.Set("ticket_no", `SS-TKT-${seq}`);
+    const all = $app.findRecordsByFilter("tickets", "id != ''", "-created", 0, 0);
+    const seq = String(all.length + 1).padStart(4, "0");
+    e.record.set("ticket_no", `SS-TKT-${seq}`);
   } catch (err) {
-    $app.logger().error("[SureShift] Ticket numbering failed: " + err);
+    $app.logger().error("[SureShift] Ticket numbering failed: " + String(err));
   }
+
+  return e.next();
 }, "tickets");
 
 // ── 8. Health + ping route ───────────────────────────────────────────────────
-routerAdd("GET", "/api/erp/ping", (c) => {
-  return c.json(200, {
+routerAdd("GET", "/api/erp/ping", (e) => {
+  return e.json(200, {
     status:  "ok",
     service: "SureShift ERP",
     version: "2.0.0",
