@@ -1,6 +1,3 @@
-# ── Secrets — NEVER commit ───────────────────────────────────────────────────
-.env
-
 # ── PocketBase data (databases, uploads, logs) ───────────────────────────────
 data/
 data/postgres/
