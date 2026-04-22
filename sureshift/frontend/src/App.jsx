@@ -114,11 +114,30 @@ function Login() {
         .modal-box{background:#fff;border-radius:20px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.2)}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
         .page-fade{animation:fadeUp .2s ease}
+        .auth-shell{width:100%;max-width:860px;display:grid;grid-template-columns:1fr 1fr;border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.4)}
+        .auth-left{background:linear-gradient(160deg,#DB2648,#91163A);padding:44px 36px;display:flex;flex-direction:column}
+        .auth-right{background:#fff}
+        .auth-tabs{display:flex;border-bottom:1px solid #E8ECF4}
+        .auth-content{padding:28px 32px}
+        @media (max-width: 920px){
+          .auth-shell{max-width:560px;grid-template-columns:1fr}
+          .auth-left{padding:28px 24px}
+          .auth-content{padding:22px 20px}
+        }
+        @media (max-width: 640px){
+          .auth-shell{border-radius:14px}
+          .auth-left{padding:22px 18px}
+          .auth-left h1{font-size:22px !important}
+          .auth-left p{font-size:12px !important}
+          .auth-left .feature-line{margin-bottom:8px !important}
+          .auth-tabs button{padding:13px 8px !important;font-size:12px !important}
+          .auth-content{padding:18px 14px}
+        }
       `}</style>
 
-      <div style={{width:"100%",maxWidth:860,display:"grid",gridTemplateColumns:"1fr 1fr",borderRadius:20,overflow:"hidden",boxShadow:"0 32px 80px rgba(0,0,0,.4)"}}>
+      <div className="auth-shell">
         {/* Left panel */}
-        <div style={{background:"linear-gradient(160deg,#DB2648,#91163A)",padding:"44px 36px",display:"flex",flexDirection:"column"}}>
+        <div className="auth-left">
           <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:40}}>
             <div style={{width:40,height:40,borderRadius:10,background:"rgba(255,255,255,.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
               <svg width={24} height={24} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#fff" strokeWidth="13" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -131,7 +150,7 @@ function Login() {
           <h1 style={{fontFamily:"'Poppins',sans-serif",fontSize:28,fontWeight:800,color:"#fff",lineHeight:1.2,marginBottom:14}}>End-to-end<br/>Relocation<br/>Management</h1>
           <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"rgba(255,255,255,.65)",lineHeight:1.7,marginBottom:28}}>Enquiry → Survey → Quotation → CFR → Operations → Invoice. One platform.</p>
           {["Auto doc numbering (SS-ENQ-NDLH-2627-0001)","8 roles with separate dashboards","WhatsApp + Email at every stage","PocketBase — your data, your server"].map(f=>(
-            <div key={f} style={{display:"flex",alignItems:"center",gap:9,marginBottom:10}}>
+            <div key={f} className="feature-line" style={{display:"flex",alignItems:"center",gap:9,marginBottom:10}}>
               <div style={{width:15,height:15,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                 <svg width={8} height={8} viewBox="0 0 10 10"><path d="M1.5 5l3 3 4-6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
               </div>
@@ -142,13 +161,13 @@ function Login() {
         </div>
 
         {/* Right panel */}
-        <div style={{background:"#fff"}}>
-          <div style={{display:"flex",borderBottom:"1px solid #E8ECF4"}}>
+        <div className="auth-right">
+          <div className="auth-tabs">
             {[{id:"login",l:"Sign In"},{id:"demo",l:"Quick Demo"}].map(t=>(
               <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"15px",border:"none",background:"transparent",fontFamily:"'Inter',sans-serif",fontSize:13.5,fontWeight:tab===t.id?700:500,color:tab===t.id?"#DB2648":"#94A3B8",borderBottom:`2.5px solid ${tab===t.id?"#DB2648":"transparent"}`,cursor:"pointer",transition:"all .15s"}}>{t.l}</button>
             ))}
           </div>
-          <div style={{padding:"28px 32px"}}>
+          <div className="auth-content">
             {err&&<div style={{background:"rgba(220,38,38,.07)",border:"1px solid rgba(220,38,38,.2)",borderRadius:9,padding:"9px 13px",marginBottom:16,fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"#DC2626"}}>{err}</div>}
             {tab==="login"?(
               <>
