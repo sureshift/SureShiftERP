@@ -83,8 +83,6 @@ function Login() {
         .li{width:100%;padding:12px 16px;border:1.5px solid #E8ECF4;border-radius:10px;font:400 14px/1 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff;transition:border-color .15s}
         .li:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
         .li::placeholder{color:#94A3B8}
-        .rc{border:2px solid #E8ECF4;border-radius:11px;padding:10px 13px;cursor:pointer;transition:all .15s;background:#fff;display:flex;align-items:center;gap:10px}
-        .rc:hover{border-color:#DB2648;background:rgba(219,38,72,.03)}
         @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
         .erp-inp{width:100%;padding:11px 14px;border:1.5px solid #E8ECF4;border-radius:10px;font:400 13.5px/1 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff;transition:border-color .15s;box-sizing:border-box}
         .erp-inp:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
