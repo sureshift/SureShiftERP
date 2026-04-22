@@ -25,6 +25,7 @@ const BRANCHES   = ["NDLH","MUMB","BANG","CHEN","HYDB","KOLK"];
 const MOVE_TYPES = ["household","office","international","vehicle","bike","storage","commercial","courier"];
 const SOURCES    = ["website","gmb","phone","whatsapp","reference"];
 const ENQ_STAGES = ["new","survey","quotation","recalling","cfr","lost"];
+const AUTH_TABS  = Object.freeze([{id:"login",l:"Sign In"},{id:"signup",l:"Sign Up"}]);
 const FY = (()=>{ const n=new Date(),y=n.getFullYear(),m=n.getMonth(); return m>=3?`${String(y).slice(-2)}${String(y+1).slice(-2)}`:`${String(y-1).slice(-2)}${String(y).slice(-2)}`; })();
 
 export function hasPerm(user,mod,action){
