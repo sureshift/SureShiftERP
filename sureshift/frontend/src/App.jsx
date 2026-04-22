@@ -69,166 +69,162 @@ function Splash() {
 // ── Login ─────────────────────────────────────────────────────────────────────
 function Login() {
   const { login, error } = useAppAuth();
-  const [email,setEmail]=useState(""); const [pass,setPass]=useState("");
-  const [busy,setBusy]=useState(false); const [tab,setTab]=useState("login");
+  const [email,setEmail]=useState("");
+  const [pass,setPass]=useState("");
+  const [busy,setBusy]=useState(false);
+  const [tab,setTab]=useState("login");
   const [signup,setSignup]=useState({name:"",workEmail:"",phone:"",company:""});
   const [localErr,setLocalErr]=useState("");
-  const handleLogin=async(e)=>{e?.preventDefault();if(!email||!pass){setLocalErr("Enter email and password.");return;}setBusy(true);setLocalErr("");try{await login(email.trim().toLowerCase(),pass);}catch(err){setLocalErr(err.message);}finally{setBusy(false);}};
-  const handleSignup=(e)=>{e?.preventDefault();setLocalErr("Self signup is currently invite-only. Please contact your admin to provision access.");};
+
+  const handleLogin=async(e)=>{
+    e?.preventDefault();
+    if(!email||!pass){setLocalErr("Enter email and password.");return;}
+    setBusy(true);
+    setLocalErr("");
+    try{await login(email.trim().toLowerCase(),pass);}catch(err){setLocalErr(err.message);}finally{setBusy(false);}
+  };
+
+  const handleSignup=(e)=>{
+    e?.preventDefault();
+    setLocalErr("Self signup is currently invite-only. Please contact your admin to provision access.");
+  };
+
   const err=localErr||error;
+
+  const achievements=[
+    {title:"99.2% on-time closures",desc:"Service workflows resolved inside SLA windows.",icon:(
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5 11-11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    )},
+    {title:"24/7 coordination",desc:"Real-time updates for operations, finance, and vendors.",icon:(
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2"/><path d="M12 8v4l2.5 2.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+    )},
+    {title:"8 team roles synced",desc:"Every stakeholder works from one shared source of truth.",icon:(
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2"/><circle cx="8.5" cy="7" r="4" stroke="currentColor" strokeWidth="2"/><path d="M20 8v6M23 11h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+    )},
+  ];
+
+  const clients=["Reliance Retail","HCLTech","Blue Dart","Marriott","Lenskart","Mahindra"];
+
   return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0F172A,#1E2D42,#111827)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+    <div style={{minHeight:"100vh",background:"linear-gradient(125deg,#3A0D19 0%,#1A1A23 45%,#0F172A 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
-        .li{width:100%;padding:12px 16px;border:1.5px solid #E8ECF4;border-radius:10px;font:400 14px/1 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff;transition:border-color .15s}
-        .li:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
+        .li{width:100%;padding:12px 14px;border:1.5px solid #E2E8F0;border-radius:12px;font:500 14px/1 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff;transition:border-color .15s,box-shadow .15s}
+        .li:focus{border-color:#D81F47;box-shadow:0 0 0 3px rgba(216,31,71,.12)}
         .li::placeholder{color:#94A3B8}
-        @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-        .erp-inp{width:100%;padding:11px 14px;border:1.5px solid #E8ECF4;border-radius:10px;font:400 13.5px/1 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff;transition:border-color .15s;box-sizing:border-box}
-        .erp-inp:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
-        .erp-inp::placeholder{color:#94A3B8}
-        .erp-sel{appearance:none;width:100%;padding:11px 14px;border:1.5px solid #E8ECF4;border-radius:10px;font:400 13.5px/1 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2394A3B8' fill='none' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center;cursor:pointer;transition:border-color .15s;box-sizing:border-box}
-        .erp-sel:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
-        .erp-btn{padding:10px 20px;border-radius:10px;border:none;cursor:pointer;font:600 13.5px 'Inter',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
-        .erp-btn-primary{background:#DB2648;color:#fff}
-        .erp-btn-primary:hover{background:#B71C3C}
-        .erp-btn-primary:disabled{background:#94A3B8;cursor:not-allowed}
-        .erp-btn-ghost{background:#F1F5F9;color:#374151;border:1.5px solid #E8ECF4}
-        .erp-btn-ghost:hover{background:#E8ECF4}
-        .nav-btn{display:flex;align-items:center;gap:10px;padding:9px 13px;border-radius:10px;cursor:pointer;transition:all .15s;color:rgba(255,255,255,.5);font:500 13px 'Inter',sans-serif;border:none;background:transparent;width:100%;text-align:left}
-        .nav-btn:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85)}
-        .nav-btn.active{background:rgba(219,38,72,.18);color:#fff;border:1px solid rgba(219,38,72,.3)}
-        .erp-card{background:#fff;border-radius:16px;border:1px solid #E8ECF4;padding:22px;box-shadow:0 2px 8px rgba(15,23,42,.05)}
-        .erp-tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font:700 10.5px 'Inter',sans-serif;letter-spacing:.3px;text-transform:uppercase}
-        .trow:hover{background:#F8FAFC}
-        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(2px)}
-        .modal-box{background:#fff;border-radius:20px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.2)}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-        .page-fade{animation:fadeUp .2s ease}
-        .auth-shell{width:100%;max-width:980px;display:grid;grid-template-columns:1.05fr 1fr;border-radius:22px;overflow:hidden;box-shadow:0 32px 90px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.08)}
-        .auth-left{position:relative;background:radial-gradient(120% 90% at 0% 0%,#E73C61 0%,#BD2045 45%,#7D1638 100%);padding:42px 36px;display:flex;flex-direction:column;overflow:hidden}
+        .auth-shell{width:100%;max-width:1080px;display:grid;grid-template-columns:1.08fr 1fr;border-radius:24px;overflow:hidden;box-shadow:0 30px 90px rgba(2,6,23,.55);border:1px solid rgba(255,255,255,.08)}
+        .auth-left{position:relative;padding:44px 40px;background:radial-gradient(130% 100% at 0% 0%,#F34369 0%,#D81F47 45%,#7A0F28 100%);display:flex;flex-direction:column;gap:20px;color:#fff}
         .auth-right{background:#fff}
-        .auth-tabs{display:flex;border-bottom:1px solid #E8ECF4}
-        .auth-content{padding:28px 32px}
-        .auth-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 11px;background:rgba(255,255,255,.14);color:rgba(255,255,255,.95);border:1px solid rgba(255,255,255,.23);border-radius:999px;font:600 11px 'Inter',sans-serif;backdrop-filter:blur(5px)}
-        .auth-orb{position:absolute;border-radius:999px;filter:blur(2px);opacity:.26;animation:float 8s ease-in-out infinite}
-        .auth-orb.one{width:200px;height:200px;background:#FFF;top:-58px;right:-72px}
-        .auth-orb.two{width:120px;height:120px;background:#FFC2D0;bottom:18%;right:-24px;animation-delay:-2.6s}
-        .auth-orb.three{width:110px;height:110px;background:#FFD9E3;bottom:-45px;left:30%}
-        .auth-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-        .auth-card{padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.09);backdrop-filter:blur(3px)}
-        .auth-sk{height:7px;border-radius:999px;background:linear-gradient(90deg,rgba(255,255,255,.24),rgba(255,255,255,.65),rgba(255,255,255,.24));background-size:220% 100%;animation:sheen 1.2s linear infinite}
-        .auth-sk + .auth-sk{margin-top:7px}
-        .auth-badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:8px;background:rgba(15,23,42,.04);border:1px solid #E8ECF4;color:#475569;font:600 11px 'Inter',sans-serif}
-        .signup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-        .auth-primary{width:100%;padding:12px;background:#DB2648;color:#fff;border:none;border-radius:11px;font:600 14px 'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
-        .auth-primary:hover{background:#B71C3C;transform:translateY(-1px)}
+        .auth-tabs{display:flex;border-bottom:1px solid #E2E8F0}
+        .auth-content{padding:30px 32px}
+        .panel-label{font:700 11px 'Inter',sans-serif;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.78)}
+        .ach-grid{display:grid;gap:10px}
+        .ach-card{display:flex;gap:12px;padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(4px)}
+        .ach-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.18);color:#fff;flex-shrink:0}
+        .section-card{padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.22);background:rgba(17,24,39,.18)}
+        .client-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+        .client-chip{padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);text-align:center;font:600 11px 'Inter',sans-serif;color:#fff}
+        .auth-primary{width:100%;padding:12px;background:#D81F47;color:#fff;border:none;border-radius:12px;font:600 14px 'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
+        .auth-primary:hover{background:#B01638;transform:translateY(-1px)}
         .auth-primary:disabled{background:#94A3B8;cursor:not-allowed;transform:none}
-        .auth-secondary{width:100%;padding:11px;border:1.5px solid #E8ECF4;background:#fff;border-radius:11px;font:600 13px 'Inter',sans-serif;color:#334155;cursor:pointer;transition:all .2s}
-        .auth-secondary:hover{background:#F8FAFC;border-color:#D0D7E2}
-        .fade-in{animation:fadeUp .22s ease}
-        @keyframes sheen{to{background-position:-220% 0}}
-        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
-        @media (max-width: 920px){
+        .auth-secondary{width:100%;padding:11px;border:1.5px solid #E2E8F0;background:#fff;border-radius:12px;font:600 13px 'Inter',sans-serif;color:#334155;cursor:pointer;transition:all .2s}
+        .auth-secondary:hover{background:#F8FAFC;border-color:#CBD5E1}
+        .signup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+        @media (max-width: 980px){
           .auth-shell{max-width:620px;grid-template-columns:1fr}
-        .auth-shell{width:100%;max-width:860px;display:grid;grid-template-columns:1fr 1fr;border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.4)}
-        .auth-left{background:linear-gradient(160deg,#DB2648,#91163A);padding:44px 36px;display:flex;flex-direction:column}
-        .auth-right{background:#fff}
-        .auth-tabs{display:flex;border-bottom:1px solid #E8ECF4}
-        .auth-content{padding:28px 32px}
-        @media (max-width: 920px){
-          .auth-shell{max-width:560px;grid-template-columns:1fr}
-          .auth-left{padding:28px 24px}
-          .auth-content{padding:22px 20px}
+          .auth-left{padding:30px 24px}
+          .auth-content{padding:24px 20px}
+          .client-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
         }
         @media (max-width: 640px){
-          .auth-shell{border-radius:14px}
-          .auth-left{padding:22px 18px}
-          .auth-left h1{font-size:22px !important}
-          .auth-left p{font-size:12px !important}
-          .auth-left .feature-line{margin-bottom:8px !important}
-          .auth-grid{grid-template-columns:1fr}
+          .auth-shell{border-radius:16px}
+          .auth-left h1{font-size:24px !important}
           .signup-grid{grid-template-columns:1fr}
-          .auth-tabs button{padding:13px 8px !important;font-size:12px !important}
-          .auth-content{padding:18px 14px}
+          .client-grid{grid-template-columns:1fr}
         }
       `}</style>
 
       <div className="auth-shell">
-        {/* Left panel */}
         <div className="auth-left">
-          <div className="auth-orb one"/>
-          <div className="auth-orb two"/>
-          <div className="auth-orb three"/>
-          <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:40}}>
-            <div style={{width:40,height:40,borderRadius:10,background:"rgba(255,255,255,.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <svg width={24} height={24} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#fff" strokeWidth="13" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:38,height:38,borderRadius:10,background:"rgba(255,255,255,.16)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <svg width={22} height={22} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#fff" strokeWidth="13" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </div>
             <div>
-              <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:18,color:"#fff",letterSpacing:"1.2px"}}>SURESHIFT</div>
-              <div style={{fontFamily:"'Inter',sans-serif",fontSize:9.5,color:"rgba(255,255,255,.5)",letterSpacing:"2.5px",textTransform:"uppercase"}}>ERP Platform v2.0</div>
+              <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:18,letterSpacing:"1px"}}>SURESHIFT ERP</div>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:10.5,color:"rgba(255,255,255,.74)",letterSpacing:"1.4px",textTransform:"uppercase"}}>Team Workspace</div>
             </div>
           </div>
-          <span className="auth-chip">● Enterprise Relocation Stack</span>
-          <h1 style={{fontFamily:"'Poppins',sans-serif",fontSize:28,fontWeight:800,color:"#fff",lineHeight:1.2,marginBottom:14}}>End-to-end<br/>Relocation<br/>Management</h1>
-          <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"rgba(255,255,255,.65)",lineHeight:1.7,marginBottom:28}}>Enquiry → Survey → Quotation → CFR → Operations → Invoice. One platform.</p>
-          {["Auto doc numbering (SS-ENQ-NDLH-2627-0001)","8 roles with separate dashboards","WhatsApp + Email at every stage","PocketBase — your data, your server"].map(f=>(
-            <div key={f} className="feature-line" style={{display:"flex",alignItems:"center",gap:9,marginBottom:10}}>
-              <div style={{width:15,height:15,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                <svg width={8} height={8} viewBox="0 0 10 10"><path d="M1.5 5l3 3 4-6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
-              </div>
-              <span style={{fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"rgba(255,255,255,.75)"}}>{f}</span>
-            </div>
-          ))}
-          <div className="auth-grid">
-            {[["Pipeline Health","Live"],["SLA Tracking","24x7"],["Automation","89%"],["Integrations","6+"]].map(([label,value])=>(
-              <div key={label} className="auth-card">
-                <div style={{fontFamily:"'Inter',sans-serif",fontSize:10.5,color:"rgba(255,255,255,.65)",marginBottom:5}}>{label}</div>
-                <div className="auth-sk" style={{maxWidth:"80%"}}/>
-                <div className="auth-sk" style={{maxWidth:"56%"}}/>
-                <div style={{marginTop:8,fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:700,color:"#fff"}}>{value}</div>
-              </div>
-            ))}
+
+          <div>
+            <h1 style={{fontFamily:"'Poppins',sans-serif",fontSize:30,fontWeight:800,lineHeight:1.18,marginBottom:8}}>Welcome back, Team SureShift — win every move together.</h1>
+            <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"rgba(255,255,255,.86)",lineHeight:1.65}}>Log in or sign up to collaborate faster, reduce service delays, and deliver exceptional relocation experiences every day.</p>
           </div>
-          <div style={{marginTop:"auto",paddingTop:28,fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.3)"}}>© 2026 Sure Shift Relocation Services Pvt. Ltd.</div>
+
+          <div>
+            <div className="panel-label" style={{marginBottom:10}}>Achievements</div>
+            <div className="ach-grid">
+              {achievements.map((item)=>(
+                <div key={item.title} className="ach-card">
+                  <div className="ach-icon">{item.icon}</div>
+                  <div>
+                    <div style={{fontFamily:"'Poppins',sans-serif",fontSize:13.5,fontWeight:700,lineHeight:1.35}}>{item.title}</div>
+                    <div style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"rgba(255,255,255,.82)",marginTop:2,lineHeight:1.5}}>{item.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="section-card">
+            <div className="panel-label" style={{marginBottom:6}}>Heading</div>
+            <div style={{fontFamily:"'Poppins',sans-serif",fontSize:15,fontWeight:700,marginBottom:4}}>Purpose-built for high-performing teams</div>
+            <div className="panel-label" style={{marginBottom:6,marginTop:8}}>Subheadings</div>
+            <div style={{fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"rgba(255,255,255,.86)",lineHeight:1.6}}>• Keep sales, operations, and finance in one aligned workflow.</div>
+            <div style={{fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"rgba(255,255,255,.86)",lineHeight:1.6}}>• Track progress in real time and close customer requests with confidence.</div>
+          </div>
+
+          <div>
+            <div className="panel-label" style={{marginBottom:4}}>Our Clients</div>
+            <div style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"rgba(255,255,255,.82)",marginBottom:10}}>Trusted by teams across retail, logistics, hospitality, and enterprise services.</div>
+            <div className="client-grid">
+              {clients.map((client)=><div key={client} className="client-chip">{client}</div>)}
+            </div>
+          </div>
         </div>
 
-        {/* Right panel */}
         <div className="auth-right">
           <div className="auth-tabs">
-            {[{id:"login",l:"Sign In"},{id:"demo",l:"Quick Demo"}].map(t=>(
-              <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"15px",border:"none",background:"transparent",fontFamily:"'Inter',sans-serif",fontSize:13.5,fontWeight:tab===t.id?700:500,color:tab===t.id?"#DB2648":"#94A3B8",borderBottom:`2.5px solid ${tab===t.id?"#DB2648":"transparent"}`,cursor:"pointer",transition:"all .15s"}}>{t.l}</button>
+            {AUTH_TABS.map(t=>(
+              <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"15px",border:"none",background:"transparent",fontFamily:"'Inter',sans-serif",fontSize:13.5,fontWeight:tab===t.id?700:500,color:tab===t.id?"#D81F47":"#94A3B8",borderBottom:`2.5px solid ${tab===t.id?"#D81F47":"transparent"}`,cursor:"pointer",transition:"all .15s"}}>{t.l}</button>
             ))}
           </div>
           <div className="auth-content">
             {err&&<div style={{background:"rgba(220,38,38,.07)",border:"1px solid rgba(220,38,38,.2)",borderRadius:9,padding:"9px 13px",marginBottom:16,fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"#DC2626"}}>{err}</div>}
             {tab==="login"?(
-              <div className="fade-in">
-                <h2 style={{fontFamily:"'Poppins',sans-serif",fontSize:20,fontWeight:700,color:"#0F172A",marginBottom:4}}>Welcome back</h2>
-                <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"#4B5563",marginBottom:22}}>Sign in to SureShift ERP</p>
+              <div>
+                <h2 style={{fontFamily:"'Poppins',sans-serif",fontSize:21,fontWeight:700,color:"#0F172A",marginBottom:4}}>Login to your workspace</h2>
+                <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"#475569",marginBottom:20}}>Continue with your official SureShift credentials.</p>
                 <form onSubmit={handleLogin}>
                   <div style={{marginBottom:13}}>
-                    <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:600,color:"#4B5563",marginBottom:5}}>Email <span style={{color:"#DB2648"}}>*</span></label>
+                    <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:600,color:"#4B5563",marginBottom:5}}>Email <span style={{color:"#D81F47"}}>*</span></label>
                     <input className="li" type="email" value={email} onChange={e=>{setEmail(e.target.value);setLocalErr("");}} placeholder="you@sureshift.in"/>
                   </div>
                   <div style={{marginBottom:20}}>
-                    <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:600,color:"#4B5563",marginBottom:5}}>Password <span style={{color:"#DB2648"}}>*</span></label>
+                    <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:600,color:"#4B5563",marginBottom:5}}>Password <span style={{color:"#D81F47"}}>*</span></label>
                     <input className="li" type="password" value={pass} onChange={e=>{setPass(e.target.value);setLocalErr("");}} placeholder="Enter password"/>
                   </div>
                   <button type="submit" disabled={busy} className="auth-primary">
-                    {busy?<><div style={{width:15,height:15,border:"2.5px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite"}}/> Signing in…</>:"Sign In →"}
+                    {busy?<><div style={{width:15,height:15,border:"2.5px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite"}}/> Signing in…</>:"Login"}
                   </button>
                 </form>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:12}}>
-                  <span className="auth-badge">MFA ready</span>
-                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#94A3B8"}}>Protected by role-based access</span>
-                </div>
               </div>
             ):(
-              <div className="fade-in">
-                <h2 style={{fontFamily:"'Poppins',sans-serif",fontSize:19,fontWeight:700,color:"#0F172A",marginBottom:4}}>Create workspace access</h2>
-                <p style={{fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"#4B5563",marginBottom:14}}>Minimal onboarding for enterprise relocation teams.</p>
+              <div>
+                <h2 style={{fontFamily:"'Poppins',sans-serif",fontSize:21,fontWeight:700,color:"#0F172A",marginBottom:4}}>Create your team account</h2>
+                <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"#475569",marginBottom:14}}>Sign up to request secure access to your branch workspace.</p>
                 <form onSubmit={handleSignup}>
                   <div className="signup-grid" style={{marginBottom:10}}>
                     <input className="li" placeholder="Full name" value={signup.name} onChange={e=>setSignup({...signup,name:e.target.value})}/>
@@ -238,12 +234,9 @@ function Login() {
                     <input className="li" placeholder="Phone number" value={signup.phone} onChange={e=>setSignup({...signup,phone:e.target.value})}/>
                     <input className="li" placeholder="Company" value={signup.company} onChange={e=>setSignup({...signup,company:e.target.value})}/>
                   </div>
-                  <button type="submit" className="auth-primary" style={{marginBottom:8}}>Request invite</button>
-                  <button type="button" className="auth-secondary" onClick={()=>setTab("login")}>Already have access? Sign in</button>
+                  <button type="submit" className="auth-primary" style={{marginBottom:8}}>Sign Up</button>
+                  <button type="button" className="auth-secondary" onClick={()=>setTab("login")}>Already registered? Login</button>
                 </form>
-                <div style={{marginTop:12,padding:"9px 12px",background:"rgba(37,99,235,.05)",borderRadius:8,border:"1px solid rgba(37,99,235,.13)",fontFamily:"'Inter',sans-serif",fontSize:11,color:"#2563EB"}}>
-                  ℹ️ Enterprise accounts are approved by workspace administrators.
-                </div>
               </div>
             )}
           </div>
