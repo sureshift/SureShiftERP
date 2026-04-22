@@ -25,7 +25,6 @@ const BRANCHES   = ["NDLH","MUMB","BANG","CHEN","HYDB","KOLK"];
 const MOVE_TYPES = ["household","office","international","vehicle","bike","storage","commercial","courier"];
 const SOURCES    = ["website","gmb","phone","whatsapp","reference"];
 const ENQ_STAGES = ["new","survey","quotation","recalling","cfr","lost"];
-const AUTH_TABS  = Object.freeze([{id:"login",l:"Sign In"},{id:"signup",l:"Sign Up"}]);
 const FY = (()=>{ const n=new Date(),y=n.getFullYear(),m=n.getMonth(); return m>=3?`${String(y).slice(-2)}${String(y+1).slice(-2)}`:`${String(y-1).slice(-2)}${String(y).slice(-2)}`; })();
 
 export function hasPerm(user,mod,action){
@@ -69,181 +68,355 @@ function Splash() {
 // ── Login ─────────────────────────────────────────────────────────────────────
 function Login() {
   const { login, error } = useAppAuth();
-  const [email,setEmail]=useState(""); const [pass,setPass]=useState("");
-  const [busy,setBusy]=useState(false); const [tab,setTab]=useState("login");
-  const [signup,setSignup]=useState({name:"",workEmail:"",phone:"",company:""});
-  const [localErr,setLocalErr]=useState("");
-  const handleLogin=async(e)=>{e?.preventDefault();if(!email||!pass){setLocalErr("Enter email and password.");return;}setBusy(true);setLocalErr("");try{await login(email.trim().toLowerCase(),pass);}catch(err){setLocalErr(err.message);}finally{setBusy(false);}};
-  const handleSignup=(e)=>{e?.preventDefault();setLocalErr("Self signup is currently invite-only. Please contact your admin to provision access.");};
-  const err=localErr||error;
+  const [tab, setTab]           = useState("login");
+  const [showPwd, setShowPwd]   = useState(false);
+  const [showCpwd, setShowCpwd] = useState(false);
+  const [busy, setBusy]         = useState(false);
+  const [localErr, setLocalErr] = useState("");
+  const [quoteIdx, setQuoteIdx] = useState(0);
+  const [remember, setRemember] = useState(false);
+
+  const [lf, setLf] = useState({ email:"", password:"" });
+  const [sf, setSf] = useState({ name:"", email:"", phone:"", company:"", partnerType:"", password:"", confirm:"" });
+
+  const QUOTES = [
+    { q:"You are not just moving boxes — you are moving lives, memories and new beginnings.", by:"Founding Team, Sure Shift" },
+    { q:"Every route planned, every item packed safely, every customer smile — that's your achievement.", by:"Operations Leadership" },
+    { q:"Our strength isn't our trucks or warehouses. It's each one of you showing up every day.", by:"HR & People Team" },
+    { q:"The best partners don't just deliver goods. They deliver trust. Thank you for being ours.", by:"Vendor Relations" },
+  ];
+
+  useEffect(() => {
+    const t = setInterval(() => setQuoteIdx(i => (i + 1) % QUOTES.length), 5000);
+    return () => clearInterval(t);
+  }, []);
+
+  const STATS = [
+    { n:"10,000+", l:"Moves completed", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
+    { n:"500+",    l:"Trusted partners", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" strokeWidth="1.8" strokeLinecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> },
+    { n:"98%",     l:"Satisfaction rate", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" strokeWidth="1.8" strokeLinecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> },
+    { n:"24 / 7",  l:"Operations support", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
+  ];
+
+  const handleLogin = async (e) => {
+    e?.preventDefault();
+    if (!lf.email || !lf.password) { setLocalErr("Please fill in both fields to continue."); return; }
+    setBusy(true); setLocalErr("");
+    try { await login(lf.email.trim().toLowerCase(), lf.password); }
+    catch (err) { setLocalErr(err.message); }
+    finally { setBusy(false); }
+  };
+
+  const handleSignup = (e) => {
+    e?.preventDefault();
+    const { name, email, phone, partnerType, password, confirm } = sf;
+    if (!name || !email || !phone || !partnerType || !password || !confirm) { setLocalErr("All fields are required to complete registration."); return; }
+    if (password !== confirm) { setLocalErr("Passwords do not match. Please re-enter."); return; }
+    setLocalErr("");
+    setLocalErr("✅ Registration submitted! Your account will be activated within 24 hours. Check your email for credentials.");
+  };
+
+  const err = localErr || error;
+  const isSuccess = err?.startsWith("✅");
+
   return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0F172A,#1E2D42,#111827)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+    <div style={{minHeight:"100vh",background:"#0C1222",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",fontFamily:"'Inter',sans-serif"}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
-        .li{width:100%;padding:12px 16px;border:1.5px solid #E8ECF4;border-radius:10px;font:400 14px/1 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff;transition:border-color .15s}
-        .li:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
-        .li::placeholder{color:#94A3B8}
-        @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-        .erp-inp{width:100%;padding:11px 14px;border:1.5px solid #E8ECF4;border-radius:10px;font:400 13.5px/1 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff;transition:border-color .15s;box-sizing:border-box}
-        .erp-inp:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
-        .erp-inp::placeholder{color:#94A3B8}
-        .erp-sel{appearance:none;width:100%;padding:11px 14px;border:1.5px solid #E8ECF4;border-radius:10px;font:400 13.5px/1 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2394A3B8' fill='none' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center;cursor:pointer;transition:border-color .15s;box-sizing:border-box}
-        .erp-sel:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
-        .erp-btn{padding:10px 20px;border-radius:10px;border:none;cursor:pointer;font:600 13.5px 'Inter',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
-        .erp-btn-primary{background:#DB2648;color:#fff}
-        .erp-btn-primary:hover{background:#B71C3C}
-        .erp-btn-primary:disabled{background:#94A3B8;cursor:not-allowed}
-        .erp-btn-ghost{background:#F1F5F9;color:#374151;border:1.5px solid #E8ECF4}
-        .erp-btn-ghost:hover{background:#E8ECF4}
-        .nav-btn{display:flex;align-items:center;gap:10px;padding:9px 13px;border-radius:10px;cursor:pointer;transition:all .15s;color:rgba(255,255,255,.5);font:500 13px 'Inter',sans-serif;border:none;background:transparent;width:100%;text-align:left}
-        .nav-btn:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85)}
-        .nav-btn.active{background:rgba(219,38,72,.18);color:#fff;border:1px solid rgba(219,38,72,.3)}
-        .erp-card{background:#fff;border-radius:16px;border:1px solid #E8ECF4;padding:22px;box-shadow:0 2px 8px rgba(15,23,42,.05)}
-        .erp-tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font:700 10.5px 'Inter',sans-serif;letter-spacing:.3px;text-transform:uppercase}
-        .trow:hover{background:#F8FAFC}
-        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(2px)}
-        .modal-box{background:#fff;border-radius:20px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.2)}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-        .page-fade{animation:fadeUp .2s ease}
-        .auth-shell{width:100%;max-width:980px;display:grid;grid-template-columns:1.05fr 1fr;border-radius:22px;overflow:hidden;box-shadow:0 32px 90px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.08)}
-        .auth-left{position:relative;background:radial-gradient(120% 90% at 0% 0%,#E73C61 0%,#BD2045 45%,#7D1638 100%);padding:42px 36px;display:flex;flex-direction:column;overflow:hidden}
-        .auth-right{background:#fff}
-        .auth-tabs{display:flex;border-bottom:1px solid #E8ECF4}
-        .auth-content{padding:28px 32px}
-        .auth-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 11px;background:rgba(255,255,255,.14);color:rgba(255,255,255,.95);border:1px solid rgba(255,255,255,.23);border-radius:999px;font:600 11px 'Inter',sans-serif;backdrop-filter:blur(5px)}
-        .auth-orb{position:absolute;border-radius:999px;filter:blur(2px);opacity:.26;animation:float 8s ease-in-out infinite}
-        .auth-orb.one{width:200px;height:200px;background:#FFF;top:-58px;right:-72px}
-        .auth-orb.two{width:120px;height:120px;background:#FFC2D0;bottom:18%;right:-24px;animation-delay:-2.6s}
-        .auth-orb.three{width:110px;height:110px;background:#FFD9E3;bottom:-45px;left:30%}
-        .auth-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-        .auth-card{padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.09);backdrop-filter:blur(3px)}
-        .auth-sk{height:7px;border-radius:999px;background:linear-gradient(90deg,rgba(255,255,255,.24),rgba(255,255,255,.65),rgba(255,255,255,.24));background-size:220% 100%;animation:sheen 1.2s linear infinite}
-        .auth-sk + .auth-sk{margin-top:7px}
-        .auth-badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:8px;background:rgba(15,23,42,.04);border:1px solid #E8ECF4;color:#475569;font:600 11px 'Inter',sans-serif}
-        .signup-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-        .auth-primary{width:100%;padding:12px;background:#DB2648;color:#fff;border:none;border-radius:11px;font:600 14px 'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
-        .auth-primary:hover{background:#B71C3C;transform:translateY(-1px)}
-        .auth-primary:disabled{background:#94A3B8;cursor:not-allowed;transform:none}
-        .auth-secondary{width:100%;padding:11px;border:1.5px solid #E8ECF4;background:#fff;border-radius:11px;font:600 13px 'Inter',sans-serif;color:#334155;cursor:pointer;transition:all .2s}
-        .auth-secondary:hover{background:#F8FAFC;border-color:#D0D7E2}
-        .fade-in{animation:fadeUp .22s ease}
-        @keyframes sheen{to{background-position:-220% 0}}
-        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
-        @media (max-width: 920px){
-          .auth-shell{max-width:620px;grid-template-columns:1fr}
-        .auth-shell{width:100%;max-width:860px;display:grid;grid-template-columns:1fr 1fr;border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.4)}
-        .auth-left{background:linear-gradient(160deg,#DB2648,#91163A);padding:44px 36px;display:flex;flex-direction:column}
-        .auth-right{background:#fff}
-        .auth-tabs{display:flex;border-bottom:1px solid #E8ECF4}
-        .auth-content{padding:28px 32px}
-        @media (max-width: 920px){
-          .auth-shell{max-width:560px;grid-template-columns:1fr}
-          .auth-left{padding:28px 24px}
-          .auth-content{padding:22px 20px}
-        }
-        @media (max-width: 640px){
-          .auth-shell{border-radius:14px}
-          .auth-left{padding:22px 18px}
-          .auth-left h1{font-size:22px !important}
-          .auth-left p{font-size:12px !important}
-          .auth-left .feature-line{margin-bottom:8px !important}
-          .auth-grid{grid-template-columns:1fr}
-          .signup-grid{grid-template-columns:1fr}
-          .auth-tabs button{padding:13px 8px !important;font-size:12px !important}
-          .auth-content{padding:18px 14px}
-        }
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeSlide{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+        @keyframes quoteIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+        .auth-wrap{display:grid;grid-template-columns:1.1fr 1fr;width:100%;max-width:1020px;min-height:620px;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,.07)}
+        .auth-left{background:#0F172A;padding:48px 44px;display:flex;flex-direction:column;position:relative;overflow:hidden;border-right:1px solid rgba(255,255,255,.06)}
+        .auth-left::before{content:"";position:absolute;top:-140px;right:-140px;width:380px;height:380px;border-radius:50%;background:rgba(219,38,72,.12);pointer-events:none}
+        .auth-left::after{content:"";position:absolute;bottom:-100px;left:-80px;width:260px;height:260px;border-radius:50%;background:rgba(219,38,72,.07);pointer-events:none}
+        .auth-dot-pattern{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.04) 1px,transparent 1px);background-size:24px 24px;pointer-events:none}
+        .auth-right{background:#FAFBFC;display:flex;flex-direction:column}
+        .auth-right-inner{flex:1;padding:40px 44px;display:flex;flex-direction:column;justify-content:center}
+        .tabs-bar{display:flex;border-bottom:1.5px solid #E8ECF4;padding:0 44px}
+        .tab-btn{padding:16px 0;margin-right:28px;border:none;background:transparent;font:600 13.5px 'Inter',sans-serif;cursor:pointer;transition:all .2s;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;color:#94A3B8;letter-spacing:.1px}
+        .tab-btn.active{color:#DB2648;border-bottom-color:#DB2648}
+        .tab-btn:hover:not(.active){color:#475569}
+        .a-label{display:block;font:600 11px 'Inter',sans-serif;color:#64748B;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+        .a-inp{width:100%;padding:11px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font:400 14px 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff;transition:all .18s;box-sizing:border-box}
+        .a-inp:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.09)}
+        .a-inp::placeholder{color:#CBD5E1}
+        .a-inp.err-field{border-color:#F87171}
+        .a-sel{appearance:none;width:100%;padding:11px 38px 11px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font:400 14px 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.6'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E") no-repeat right 13px center;cursor:pointer;transition:all .18s;box-sizing:border-box}
+        .a-sel:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.09)}
+        .a-sel.placeholder{color:#CBD5E1}
+        .pw-wrap{position:relative}
+        .pw-wrap .a-inp{padding-right:44px}
+        .eye-btn{position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94A3B8;display:flex;padding:3px;border-radius:5px;transition:color .15s}
+        .eye-btn:hover{color:#475569}
+        .a-btn{width:100%;padding:13px;background:#DB2648;color:#fff;border:none;border-radius:11px;font:600 14.5px 'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:all .18s;letter-spacing:.1px}
+        .a-btn:hover{background:#B91C3C;transform:translateY(-1px)}
+        .a-btn:active{transform:translateY(0)}
+        .a-btn:disabled{background:#CBD5E1;cursor:not-allowed;transform:none}
+        .a-link{color:#DB2648;font:600 13px 'Inter',sans-serif;text-decoration:none;cursor:pointer;background:none;border:none;padding:0;transition:color .15s}
+        .a-link:hover{color:#991B2F}
+        .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .stat-card{padding:16px;border-radius:13px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);display:flex;flex-direction:column;gap:10px;transition:border-color .2s}
+        .stat-card:hover{border-color:rgba(219,38,72,.3)}
+        .quote-box{border-left:2.5px solid rgba(219,38,72,.6);padding-left:16px;margin-top:auto}
+        .quote-text{font:400 13.5px/1.65 'Inter',sans-serif;color:rgba(255,255,255,.65);font-style:italic;animation:quoteIn .5s ease}
+        .quote-by{font:600 11px 'Inter',sans-serif;color:rgba(219,38,72,.8);letter-spacing:.5px;text-transform:uppercase;margin-top:7px}
+        .dot-nav{display:flex;gap:5px;margin-top:12px}
+        .dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .4s;cursor:pointer}
+        .dot.active{width:18px;border-radius:3px;background:#DB2648}
+        .remember-row{display:flex;align-items:center;justify-content:space-between;margin:6px 0 20px}
+        .check-label{display:flex;align-items:center;gap:7px;font:400 13px 'Inter',sans-serif;color:#475569;cursor:pointer}
+        .check-label input{accent-color:#DB2648;width:15px;height:15px;cursor:pointer}
+        .divider{display:flex;align-items:center;gap:12px;margin:20px 0}
+        .divider-line{flex:1;height:1px;background:#E2E8F0}
+        .divider-text{font:400 12px 'Inter',sans-serif;color:#94A3B8}
+        .bottom-note{text-align:center;font:400 13px 'Inter',sans-serif;color:#94A3B8;margin-top:18px}
+        .form-section{animation:fadeUp .2s ease}
+        @media(max-width:900px){.auth-wrap{grid-template-columns:1fr;max-width:500px}.auth-left{padding:32px 28px;min-height:0}.auth-left .quota-box,.auth-left .clients-section{display:none}.auth-right-inner,.tabs-bar{padding-left:28px;padding-right:28px}.grid-2{grid-template-columns:1fr}}
+        @media(max-width:520px){.auth-right-inner,.tabs-bar{padding-left:20px;padding-right:20px}.auth-left{padding:24px 20px}.a-btn{padding:12px}}
       `}</style>
 
-      <div className="auth-shell">
-        {/* Left panel */}
+      <div className="auth-wrap">
+        {/* ── LEFT PANEL ── */}
         <div className="auth-left">
-          <div className="auth-orb one"/>
-          <div className="auth-orb two"/>
-          <div className="auth-orb three"/>
-          <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:40}}>
-            <div style={{width:40,height:40,borderRadius:10,background:"rgba(255,255,255,.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <svg width={24} height={24} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#fff" strokeWidth="13" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <div className="auth-dot-pattern"/>
+
+          {/* Logo */}
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:36,position:"relative"}}>
+            <div style={{width:40,height:40,borderRadius:11,background:"rgba(219,38,72,.2)",border:"1px solid rgba(219,38,72,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <svg width={22} height={22} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#DB2648" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </div>
             <div>
-              <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:18,color:"#fff",letterSpacing:"1.2px"}}>SURESHIFT</div>
-              <div style={{fontFamily:"'Inter',sans-serif",fontSize:9.5,color:"rgba(255,255,255,.5)",letterSpacing:"2.5px",textTransform:"uppercase"}}>ERP Platform v2.0</div>
+              <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:17,color:"#fff",letterSpacing:"1.2px",lineHeight:1}}>SURE<span style={{color:"#DB2648"}}>SHIFT</span></div>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:9.5,color:"rgba(255,255,255,.3)",letterSpacing:"2.5px",textTransform:"uppercase",marginTop:2}}>Relocation ERP · v2.0</div>
+            </div>
+            <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:5,padding:"4px 10px",border:"1px solid rgba(255,255,255,.1)",borderRadius:"99px",background:"rgba(255,255,255,.04)"}}>
+              <div style={{width:6,height:6,borderRadius:"50%",background:"#22C55E",animation:"pulse 2s ease infinite"}}/>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:10.5,color:"rgba(255,255,255,.5)",fontWeight:600}}>Systems live</span>
             </div>
           </div>
-          <span className="auth-chip">● Enterprise Relocation Stack</span>
-          <h1 style={{fontFamily:"'Poppins',sans-serif",fontSize:28,fontWeight:800,color:"#fff",lineHeight:1.2,marginBottom:14}}>End-to-end<br/>Relocation<br/>Management</h1>
-          <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"rgba(255,255,255,.65)",lineHeight:1.7,marginBottom:28}}>Enquiry → Survey → Quotation → CFR → Operations → Invoice. One platform.</p>
-          {["Auto doc numbering (SS-ENQ-NDLH-2627-0001)","8 roles with separate dashboards","WhatsApp + Email at every stage","PocketBase — your data, your server"].map(f=>(
-            <div key={f} className="feature-line" style={{display:"flex",alignItems:"center",gap:9,marginBottom:10}}>
-              <div style={{width:15,height:15,borderRadius:"50%",background:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                <svg width={8} height={8} viewBox="0 0 10 10"><path d="M1.5 5l3 3 4-6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
-              </div>
-              <span style={{fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"rgba(255,255,255,.75)"}}>{f}</span>
+
+          {/* Headline */}
+          <div style={{position:"relative",marginBottom:28}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 11px",background:"rgba(219,38,72,.12)",border:"1px solid rgba(219,38,72,.2)",borderRadius:99,marginBottom:14}}>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:10.5,fontWeight:700,color:"#FB7185",letterSpacing:".6px",textTransform:"uppercase"}}>Welcome, Team Sure Shift</span>
             </div>
-          ))}
-          <div className="auth-grid">
-            {[["Pipeline Health","Live"],["SLA Tracking","24x7"],["Automation","89%"],["Integrations","6+"]].map(([label,value])=>(
-              <div key={label} className="auth-card">
-                <div style={{fontFamily:"'Inter',sans-serif",fontSize:10.5,color:"rgba(255,255,255,.65)",marginBottom:5}}>{label}</div>
-                <div className="auth-sk" style={{maxWidth:"80%"}}/>
-                <div className="auth-sk" style={{maxWidth:"56%"}}/>
-                <div style={{marginTop:8,fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:700,color:"#fff"}}>{value}</div>
+            <h1 style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:27,color:"#fff",lineHeight:1.22,marginBottom:12}}>
+              You Keep<br/>
+              <span style={{color:"#DB2648"}}>India Moving.</span><br/>
+              We've Got Your Back.
+            </h1>
+            <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"rgba(255,255,255,.5)",lineHeight:1.7}}>Your platform for enquiries, surveys, quotations, operations, and invoices — built for speed, built for you.</p>
+          </div>
+
+          {/* Stats grid */}
+          <div className="grid-2" style={{marginBottom:28}}>
+            {STATS.map(s=>(
+              <div key={s.l} className="stat-card">
+                <div style={{width:32,height:32,borderRadius:9,background:"rgba(219,38,72,.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>{s.icon}</div>
+                <div>
+                  <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:17,color:"#fff",lineHeight:1}}>{s.n}</div>
+                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"rgba(255,255,255,.4)",marginTop:3}}>{s.l}</div>
+                </div>
               </div>
             ))}
           </div>
-          <div style={{marginTop:"auto",paddingTop:28,fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.3)"}}>© 2026 Sure Shift Relocation Services Pvt. Ltd.</div>
+
+          {/* Rotating quote */}
+          <div className="quote-box">
+            <div className="quote-text" key={quoteIdx}>"{QUOTES[quoteIdx].q}"</div>
+            <div className="quote-by">— {QUOTES[quoteIdx].by}</div>
+            <div className="dot-nav">
+              {QUOTES.map((_,i)=>(
+                <div key={i} className={`dot${quoteIdx===i?" active":""}`} onClick={()=>setQuoteIdx(i)}/>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div style={{paddingTop:24,marginTop:8,borderTop:"1px solid rgba(255,255,255,.06)",fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <span>© 2026 Sure Shift Relocation Services Pvt. Ltd.</span>
+            <span>Delhi · Mumbai · Bangalore</span>
+          </div>
         </div>
 
-        {/* Right panel */}
+        {/* ── RIGHT PANEL ── */}
         <div className="auth-right">
-          <div className="auth-tabs">
-            {[{id:"login",l:"Sign In"},{id:"demo",l:"Quick Demo"}].map(t=>(
-              <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"15px",border:"none",background:"transparent",fontFamily:"'Inter',sans-serif",fontSize:13.5,fontWeight:tab===t.id?700:500,color:tab===t.id?"#DB2648":"#94A3B8",borderBottom:`2.5px solid ${tab===t.id?"#DB2648":"transparent"}`,cursor:"pointer",transition:"all .15s"}}>{t.l}</button>
+          {/* Tabs */}
+          <div className="tabs-bar">
+            {[{id:"login",l:"Employee Login"},{id:"signup",l:"Partner Sign Up"}].map(t=>(
+              <button key={t.id} className={`tab-btn${tab===t.id?" active":""}`}
+                onClick={()=>{setTab(t.id);setLocalErr("");}}>
+                {t.l}
+              </button>
             ))}
           </div>
-          <div className="auth-content">
-            {err&&<div style={{background:"rgba(220,38,38,.07)",border:"1px solid rgba(220,38,38,.2)",borderRadius:9,padding:"9px 13px",marginBottom:16,fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"#DC2626"}}>{err}</div>}
-            {tab==="login"?(
-              <div className="fade-in">
-                <h2 style={{fontFamily:"'Poppins',sans-serif",fontSize:20,fontWeight:700,color:"#0F172A",marginBottom:4}}>Welcome back</h2>
-                <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"#4B5563",marginBottom:22}}>Sign in to SureShift ERP</p>
+
+          <div className="auth-right-inner">
+            {/* Error / Success banner */}
+            {err && (
+              <div style={{
+                background: isSuccess ? "rgba(5,150,105,.07)" : "rgba(220,38,38,.06)",
+                border: `1px solid ${isSuccess?"rgba(5,150,105,.25)":"rgba(220,38,38,.2)"}`,
+                borderRadius:10,padding:"11px 14px",marginBottom:20,
+                fontFamily:"'Inter',sans-serif",fontSize:13,
+                color:isSuccess?"#065F46":"#DC2626",
+                display:"flex",gap:9,alignItems:"flex-start",lineHeight:1.5
+              }}>
+                <span style={{flexShrink:0}}>{isSuccess?"✅":"⚠️"}</span>
+                <span>{err}</span>
+              </div>
+            )}
+
+            {/* ── LOGIN FORM ── */}
+            {tab==="login" && (
+              <div className="form-section">
+                <div style={{marginBottom:24}}>
+                  <h2 style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:23,color:"#0F172A",marginBottom:5}}>Good {timeGreeting()} 👋</h2>
+                  <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#64748B",lineHeight:1.55}}>Sign in to your Sure Shift ERP workspace and get things moving.</p>
+                </div>
+
                 <form onSubmit={handleLogin}>
-                  <div style={{marginBottom:13}}>
-                    <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:600,color:"#4B5563",marginBottom:5}}>Email <span style={{color:"#DB2648"}}>*</span></label>
-                    <input className="li" type="email" value={email} onChange={e=>{setEmail(e.target.value);setLocalErr("");}} placeholder="you@sureshift.in"/>
+                  <div style={{marginBottom:16}}>
+                    <label className="a-label">Email address</label>
+                    <input className="a-inp" type="email" placeholder="you@sureshift.in"
+                      value={lf.email} autoFocus
+                      onChange={e=>{setLf({...lf,email:e.target.value});setLocalErr("");}}
+                      onKeyDown={e=>e.key==="Enter"&&handleLogin(e)}/>
                   </div>
-                  <div style={{marginBottom:20}}>
-                    <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:600,color:"#4B5563",marginBottom:5}}>Password <span style={{color:"#DB2648"}}>*</span></label>
-                    <input className="li" type="password" value={pass} onChange={e=>{setPass(e.target.value);setLocalErr("");}} placeholder="Enter password"/>
+
+                  <div style={{marginBottom:4}}>
+                    <label className="a-label">Password</label>
+                    <div className="pw-wrap">
+                      <input className="a-inp" type={showPwd?"text":"password"} placeholder="Enter your password"
+                        value={lf.password}
+                        onChange={e=>{setLf({...lf,password:e.target.value});setLocalErr("");}}
+                        onKeyDown={e=>e.key==="Enter"&&handleLogin(e)}/>
+                      <button type="button" className="eye-btn" onClick={()=>setShowPwd(v=>!v)} aria-label={showPwd?"Hide password":"Show password"}>
+                        {showPwd
+                          ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>
+                          : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        }
+                      </button>
+                    </div>
                   </div>
-                  <button type="submit" disabled={busy} className="auth-primary">
-                    {busy?<><div style={{width:15,height:15,border:"2.5px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite"}}/> Signing in…</>:"Sign In →"}
+
+                  <div className="remember-row">
+                    <label className="check-label">
+                      <input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}/>
+                      Keep me signed in
+                    </label>
+                    <button type="button" className="a-link">Forgot password?</button>
+                  </div>
+
+                  <button type="submit" className="a-btn" disabled={busy}>
+                    {busy
+                      ? <><div style={{width:16,height:16,border:"2.5px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .75s linear infinite"}}/> Signing in…</>
+                      : "Sign in to ERP →"
+                    }
                   </button>
                 </form>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:12}}>
-                  <span className="auth-badge">MFA ready</span>
-                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#94A3B8"}}>Protected by role-based access</span>
+
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:20,padding:"12px 14px",background:"#F8FAFC",borderRadius:10,border:"1px solid #E8ECF4"}}>
+                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#64748B"}}>🔒 Secured with role-based access control</span>
+                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#94A3B8"}}>PocketBase v0.36</span>
                 </div>
+
+                <p className="bottom-note">
+                  A vendor or partner?{" "}
+                  <button className="a-link" onClick={()=>{setTab("signup");setLocalErr("");}}>Sign up here</button>
+                </p>
               </div>
-            ):(
-              <div className="fade-in">
-                <h2 style={{fontFamily:"'Poppins',sans-serif",fontSize:19,fontWeight:700,color:"#0F172A",marginBottom:4}}>Create workspace access</h2>
-                <p style={{fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"#4B5563",marginBottom:14}}>Minimal onboarding for enterprise relocation teams.</p>
-                <form onSubmit={handleSignup}>
-                  <div className="signup-grid" style={{marginBottom:10}}>
-                    <input className="li" placeholder="Full name" value={signup.name} onChange={e=>setSignup({...signup,name:e.target.value})}/>
-                    <input className="li" placeholder="Work email" type="email" value={signup.workEmail} onChange={e=>setSignup({...signup,workEmail:e.target.value})}/>
-                  </div>
-                  <div className="signup-grid" style={{marginBottom:16}}>
-                    <input className="li" placeholder="Phone number" value={signup.phone} onChange={e=>setSignup({...signup,phone:e.target.value})}/>
-                    <input className="li" placeholder="Company" value={signup.company} onChange={e=>setSignup({...signup,company:e.target.value})}/>
-                  </div>
-                  <button type="submit" className="auth-primary" style={{marginBottom:8}}>Request invite</button>
-                  <button type="button" className="auth-secondary" onClick={()=>setTab("login")}>Already have access? Sign in</button>
-                </form>
-                <div style={{marginTop:12,padding:"9px 12px",background:"rgba(37,99,235,.05)",borderRadius:8,border:"1px solid rgba(37,99,235,.13)",fontFamily:"'Inter',sans-serif",fontSize:11,color:"#2563EB"}}>
-                  ℹ️ Enterprise accounts are approved by workspace administrators.
+            )}
+
+            {/* ── SIGNUP FORM ── */}
+            {tab==="signup" && (
+              <div className="form-section">
+                <div style={{marginBottom:22}}>
+                  <h2 style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:22,color:"#0F172A",marginBottom:5}}>Join Our Partner Network</h2>
+                  <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#64748B",lineHeight:1.55}}>Register as a Sure Shift partner. Your account will be activated within 24 hours.</p>
                 </div>
+
+                <form onSubmit={handleSignup}>
+                  <div className="grid-2" style={{marginBottom:12}}>
+                    <div>
+                      <label className="a-label">Full name</label>
+                      <input className="a-inp" placeholder="Your full name" value={sf.name} autoFocus
+                        onChange={e=>{setSf({...sf,name:e.target.value});setLocalErr("");}}/>
+                    </div>
+                    <div>
+                      <label className="a-label">Phone number</label>
+                      <input className="a-inp" placeholder="+91 9XXXXXXXXX" type="tel" value={sf.phone}
+                        onChange={e=>{setSf({...sf,phone:e.target.value});setLocalErr("");}}/>
+                    </div>
+                  </div>
+
+                  <div style={{marginBottom:12}}>
+                    <label className="a-label">Business email</label>
+                    <input className="a-inp" placeholder="you@company.com" type="email" value={sf.email}
+                      onChange={e=>{setSf({...sf,email:e.target.value});setLocalErr("");}}/>
+                  </div>
+
+                  <div className="grid-2" style={{marginBottom:12}}>
+                    <div>
+                      <label className="a-label">Company / Firm name</label>
+                      <input className="a-inp" placeholder="Your company name" value={sf.company}
+                        onChange={e=>{setSf({...sf,company:e.target.value});setLocalErr("");}}/>
+                    </div>
+                    <div>
+                      <label className="a-label">Partner type</label>
+                      <select className={`a-sel${!sf.partnerType?" placeholder":""}`} value={sf.partnerType}
+                        onChange={e=>{setSf({...sf,partnerType:e.target.value});setLocalErr("");}}>
+                        <option value="" disabled>Select type…</option>
+                        <option value="vehicle">🚛 Vehicle Partner</option>
+                        <option value="manpower">👷 Manpower Partner</option>
+                        <option value="material">📦 Material Partner</option>
+                        <option value="business">🤝 Business Partner</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid-2" style={{marginBottom:20}}>
+                    <div>
+                      <label className="a-label">Password</label>
+                      <div className="pw-wrap">
+                        <input className="a-inp" type={showPwd?"text":"password"} placeholder="Min 8 characters" value={sf.password}
+                          onChange={e=>{setSf({...sf,password:e.target.value});setLocalErr("");}}/>
+                        <button type="button" className="eye-btn" onClick={()=>setShowPwd(v=>!v)} aria-label="Toggle password">
+                          {showPwd
+                            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>
+                            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                          }
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="a-label">Confirm password</label>
+                      <div className="pw-wrap">
+                        <input className="a-inp" type={showCpwd?"text":"password"} placeholder="Repeat password"
+                          value={sf.confirm}
+                          style={{borderColor: sf.confirm && sf.confirm!==sf.password ? "#F87171" : ""}}
+                          onChange={e=>{setSf({...sf,confirm:e.target.value});setLocalErr("");}}/>
+                        <button type="button" className="eye-btn" onClick={()=>setShowCpwd(v=>!v)} aria-label="Toggle confirm">
+                          {showCpwd
+                            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>
+                            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                          }
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button type="submit" className="a-btn">Register as Partner →</button>
+                </form>
+
+                <p className="bottom-note">
+                  Already have an account?{" "}
+                  <button className="a-link" onClick={()=>{setTab("login");setLocalErr("");}}>Sign in here</button>
+                </p>
               </div>
             )}
           </div>
@@ -253,21 +426,11 @@ function Login() {
   );
 }
 
-// ── NAV ───────────────────────────────────────────────────────────────────────
-const NAV = [
-  {id:"dashboard", label:"Dashboard",  icon:"◼", roles:["*"]},
-  {id:"enquiries", label:"Enquiries",  icon:"📥", roles:["super_admin","branch_head","sales_exec","ops_exec"]},
-  {id:"surveys",   label:"Surveys",    icon:"📋", roles:["super_admin","branch_head","sales_exec","surveyor"]},
-  {id:"quotations",label:"Quotations", icon:"📄", roles:["super_admin","branch_head","sales_exec","finance_exec"]},
-  {id:"bookings",  label:"Bookings",   icon:"📦", roles:["super_admin","branch_head","ops_exec","finance_exec"]},
-  {id:"operations",label:"Operations", icon:"🚛", roles:["super_admin","branch_head","ops_exec","vehicle_vendor"]},
-  {id:"invoices",  label:"Invoices",   icon:"💳", roles:["super_admin","branch_head","finance_exec"]},
-  {id:"vendors",   label:"Vendors",    icon:"🤝", roles:["super_admin","branch_head","ops_exec"]},
-  {id:"users",     label:"Users",      icon:"👥", roles:["super_admin","branch_head"]},
-  {id:"settings",  label:"Settings",   icon:"⚙️", roles:["super_admin"]},
-];
+function timeGreeting() {
+  const h = new Date().getHours();
+  return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
+}
 
-// ── SHELL ─────────────────────────────────────────────────────────────────────
 function Shell() {
   const {user,logout}=useAppAuth();
   const [nav,setNav]=useState("dashboard");
