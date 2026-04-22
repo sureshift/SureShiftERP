@@ -66,23 +66,24 @@ function Splash() {
 }
 
 // ── Login ─────────────────────────────────────────────────────────────────────
+// ── Login ─────────────────────────────────────────────────────────────────────
+const INIT_SF = { name:"", email:"", phone:"", company:"", partnerType:"" };
+
 function Login() {
   const { login, error } = useAppAuth();
-  const [tab, setTab]           = useState("login");
-  const [showPwd, setShowPwd]   = useState(false);
-  const [showCpwd, setShowCpwd] = useState(false);
-  const [busy, setBusy]         = useState(false);
-  const [localErr, setLocalErr] = useState("");
-  const [quoteIdx, setQuoteIdx] = useState(0);
-  const [remember, setRemember] = useState(false);
-
+  const [tab, setTab]         = useState("login");
+  const [showPwd, setShowPwd] = useState(false);
+  const [busy, setBusy]       = useState(false);
+  const [msg, setMsg]         = useState(null); // {type:"error"|"success", text}
+  const [quoteIdx, setQuoteIdx]= useState(0);
+  const [remember, setRemember]= useState(false);
   const [lf, setLf] = useState({ email:"", password:"" });
-  const [sf, setSf] = useState({ name:"", email:"", phone:"", company:"", partnerType:"", password:"", confirm:"" });
+  const [sf, setSf] = useState(INIT_SF);
 
   const QUOTES = [
     { q:"You are not just moving boxes — you are moving lives, memories and new beginnings.", by:"Founding Team, Sure Shift" },
     { q:"Every route planned, every item packed safely, every customer smile — that's your achievement.", by:"Operations Leadership" },
-    { q:"Our strength isn't our trucks or warehouses. It's each one of you showing up every day.", by:"HR & People Team" },
+    { q:"Our strength isn't our trucks or warehouses. It's each one of you showing up every single day.", by:"HR & People Team" },
     { q:"The best partners don't just deliver goods. They deliver trust. Thank you for being ours.", by:"Vendor Relations" },
   ];
 
@@ -91,331 +92,408 @@ function Login() {
     return () => clearInterval(t);
   }, []);
 
+  /* ── flaticon-style SVG icons ── */
+  const IcoMove = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+  );
+  const IcoPartner = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+    </svg>
+  );
+  const IcoStar = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+  );
+  const IcoClock = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+    </svg>
+  );
+  const IcoEyeOn = ({s=17}) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+  const IcoEyeOff = ({s=17}) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/>
+    </svg>
+  );
+  const IcoCheck = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#065F46" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/>
+    </svg>
+  );
+  const IcoWarn = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  );
+  const IcoShield = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+  );
+  const IcoWave = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#DB2648" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c.5 2.74.08 5.56-.87 8.3M4.91 2.85c1.94 4.96 2.95 8.05 2.95 11.05M.5 7.09C1.53 9.53 1.78 11.5 1.78 14"/><path d="M12 2l.01 0"/>
+    </svg>
+  );
+
   const STATS = [
-    { n:"10,000+", l:"Moves completed", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
-    { n:"500+",    l:"Trusted partners", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" strokeWidth="1.8" strokeLinecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> },
-    { n:"98%",     l:"Satisfaction rate", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" strokeWidth="1.8" strokeLinecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> },
-    { n:"24 / 7",  l:"Operations support", icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> },
+    { n:"10,000+", l:"Moves Completed",    Icon:IcoMove },
+    { n:"500+",    l:"Trusted Partners",   Icon:IcoPartner },
+    { n:"98%",     l:"Satisfaction Rate",  Icon:IcoStar },
+    { n:"24 / 7",  l:"Operations Support", Icon:IcoClock },
+  ];
+
+  const PARTNER_TYPES = [
+    { v:"vehicle",   l:"Vehicle Partner",   Icon:() => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
+    { v:"manpower",  l:"Manpower Partner",  Icon:() => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> },
+    { v:"material",  l:"Material Partner",  Icon:() => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg> },
+    { v:"business",  l:"Business Partner",  Icon:() => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg> },
   ];
 
   const handleLogin = async (e) => {
     e?.preventDefault();
-    if (!lf.email || !lf.password) { setLocalErr("Please fill in both fields to continue."); return; }
-    setBusy(true); setLocalErr("");
+    if (!lf.email || !lf.password) { setMsg({type:"error",text:"Please enter your email and password to continue."}); return; }
+    setBusy(true); setMsg(null);
     try { await login(lf.email.trim().toLowerCase(), lf.password); }
-    catch (err) { setLocalErr(err.message); }
+    catch (err) { setMsg({type:"error",text:err.message}); }
     finally { setBusy(false); }
   };
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e?.preventDefault();
-    const { name, email, phone, partnerType, password, confirm } = sf;
-    if (!name || !email || !phone || !partnerType || !password || !confirm) { setLocalErr("All fields are required to complete registration."); return; }
-    if (password !== confirm) { setLocalErr("Passwords do not match. Please re-enter."); return; }
-    setLocalErr("");
-    setLocalErr("✅ Registration submitted! Your account will be activated within 24 hours. Check your email for credentials.");
+    const { name, email, phone, company, partnerType } = sf;
+    if (!name || !email || !phone || !company || !partnerType) {
+      setMsg({type:"error",text:"All fields are required to complete your registration."}); return;
+    }
+    setBusy(true); setMsg(null);
+    try {
+      await pb.collection("partner_requests").create({
+        name, email: email.trim().toLowerCase(), phone, company,
+        partner_type: partnerType, status: "pending",
+        submitted_at: new Date().toISOString(),
+      });
+      setSf(INIT_SF);
+      setMsg({type:"success",text:"Registration submitted successfully! Your account will be activated within 24 hours. We will send your credentials to " + email + "."});
+    } catch (err) {
+      const errMsg = err?.response?.data?.email?.message || err.message || "Submission failed. Please try again.";
+      setMsg({type:"error",text:errMsg});
+    } finally { setBusy(false); }
   };
 
-  const err = localErr || error;
-  const isSuccess = err?.startsWith("✅");
+  const hr = new Date().getHours();
+  const greeting = hr < 12 ? "morning" : hr < 17 ? "afternoon" : "evening";
 
   return (
-    <div style={{minHeight:"100vh",background:"#0C1222",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",fontFamily:"'Inter',sans-serif"}}>
+    <div style={{minHeight:"100vh",background:"#F0F2F5",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",fontFamily:"'Inter',sans-serif"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
         @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes fadeSlide{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
-        @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
-        @keyframes quoteIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-        .auth-wrap{display:grid;grid-template-columns:1.1fr 1fr;width:100%;max-width:1020px;min-height:620px;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,.07)}
-        .auth-left{background:#0F172A;padding:48px 44px;display:flex;flex-direction:column;position:relative;overflow:hidden;border-right:1px solid rgba(255,255,255,.06)}
-        .auth-left::before{content:"";position:absolute;top:-140px;right:-140px;width:380px;height:380px;border-radius:50%;background:rgba(219,38,72,.12);pointer-events:none}
-        .auth-left::after{content:"";position:absolute;bottom:-100px;left:-80px;width:260px;height:260px;border-radius:50%;background:rgba(219,38,72,.07);pointer-events:none}
-        .auth-dot-pattern{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.04) 1px,transparent 1px);background-size:24px 24px;pointer-events:none}
-        .auth-right{background:#FAFBFC;display:flex;flex-direction:column}
-        .auth-right-inner{flex:1;padding:40px 44px;display:flex;flex-direction:column;justify-content:center}
-        .tabs-bar{display:flex;border-bottom:1.5px solid #E8ECF4;padding:0 44px}
-        .tab-btn{padding:16px 0;margin-right:28px;border:none;background:transparent;font:600 13.5px 'Inter',sans-serif;cursor:pointer;transition:all .2s;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;color:#94A3B8;letter-spacing:.1px}
-        .tab-btn.active{color:#DB2648;border-bottom-color:#DB2648}
-        .tab-btn:hover:not(.active){color:#475569}
-        .a-label{display:block;font:600 11px 'Inter',sans-serif;color:#64748B;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
-        .a-inp{width:100%;padding:11px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font:400 14px 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff;transition:all .18s;box-sizing:border-box}
-        .a-inp:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.09)}
-        .a-inp::placeholder{color:#CBD5E1}
-        .a-inp.err-field{border-color:#F87171}
-        .a-sel{appearance:none;width:100%;padding:11px 38px 11px 14px;border:1.5px solid #E2E8F0;border-radius:10px;font:400 14px 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.6'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E") no-repeat right 13px center;cursor:pointer;transition:all .18s;box-sizing:border-box}
-        .a-sel:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.09)}
-        .a-sel.placeholder{color:#CBD5E1}
-        .pw-wrap{position:relative}
-        .pw-wrap .a-inp{padding-right:44px}
-        .eye-btn{position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94A3B8;display:flex;padding:3px;border-radius:5px;transition:color .15s}
-        .eye-btn:hover{color:#475569}
-        .a-btn{width:100%;padding:13px;background:#DB2648;color:#fff;border:none;border-radius:11px;font:600 14.5px 'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:all .18s;letter-spacing:.1px}
-        .a-btn:hover{background:#B91C3C;transform:translateY(-1px)}
-        .a-btn:active{transform:translateY(0)}
-        .a-btn:disabled{background:#CBD5E1;cursor:not-allowed;transform:none}
-        .a-link{color:#DB2648;font:600 13px 'Inter',sans-serif;text-decoration:none;cursor:pointer;background:none;border:none;padding:0;transition:color .15s}
-        .a-link:hover{color:#991B2F}
-        .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-        .stat-card{padding:16px;border-radius:13px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);display:flex;flex-direction:column;gap:10px;transition:border-color .2s}
-        .stat-card:hover{border-color:rgba(219,38,72,.3)}
-        .quote-box{border-left:2.5px solid rgba(219,38,72,.6);padding-left:16px;margin-top:auto}
-        .quote-text{font:400 13.5px/1.65 'Inter',sans-serif;color:rgba(255,255,255,.65);font-style:italic;animation:quoteIn .5s ease}
-        .quote-by{font:600 11px 'Inter',sans-serif;color:rgba(219,38,72,.8);letter-spacing:.5px;text-transform:uppercase;margin-top:7px}
-        .dot-nav{display:flex;gap:5px;margin-top:12px}
-        .dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.2);transition:all .4s;cursor:pointer}
-        .dot.active{width:18px;border-radius:3px;background:#DB2648}
-        .remember-row{display:flex;align-items:center;justify-content:space-between;margin:6px 0 20px}
-        .check-label{display:flex;align-items:center;gap:7px;font:400 13px 'Inter',sans-serif;color:#475569;cursor:pointer}
-        .check-label input{accent-color:#DB2648;width:15px;height:15px;cursor:pointer}
-        .divider{display:flex;align-items:center;gap:12px;margin:20px 0}
-        .divider-line{flex:1;height:1px;background:#E2E8F0}
-        .divider-text{font:400 12px 'Inter',sans-serif;color:#94A3B8}
-        .bottom-note{text-align:center;font:400 13px 'Inter',sans-serif;color:#94A3B8;margin-top:18px}
-        .form-section{animation:fadeUp .2s ease}
-        @media(max-width:900px){.auth-wrap{grid-template-columns:1fr;max-width:500px}.auth-left{padding:32px 28px;min-height:0}.auth-left .quota-box,.auth-left .clients-section{display:none}.auth-right-inner,.tabs-bar{padding-left:28px;padding-right:28px}.grid-2{grid-template-columns:1fr}}
-        @media(max-width:520px){.auth-right-inner,.tabs-bar{padding-left:20px;padding-right:20px}.auth-left{padding:24px 20px}.a-btn{padding:12px}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes quoteIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes pulseDot{0%,100%{opacity:.5}50%{opacity:1}}
+        .aw{display:grid;grid-template-columns:1.05fr 1fr;width:100%;max-width:1040px;min-height:640px;border-radius:22px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.18)}
+        .al{background:#DB2648;padding:50px 44px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+        .al::before{content:"";position:absolute;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
+        .al::after{content:"";position:absolute;bottom:-60px;left:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.06);pointer-events:none}
+        .adp{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px;pointer-events:none}
+        .ar{background:#fff;display:flex;flex-direction:column}
+        .tabs-bar{display:flex;border-bottom:1.5px solid #F1F5F9;padding:0 44px}
+        .tab-btn{padding:18px 0;margin-right:30px;border:none;background:transparent;font:600 13.5px 'Inter',sans-serif;cursor:pointer;transition:all .2s;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;color:#94A3B8;letter-spacing:.1px;white-space:nowrap}
+        .tab-btn.on{color:#DB2648;border-bottom-color:#DB2648}
+        .tab-btn:hover:not(.on){color:#475569}
+        .ari{flex:1;padding:40px 44px;display:flex;flex-direction:column;justify-content:center}
+        .lbl{display:block;font:600 10.5px 'Inter',sans-serif;color:#64748B;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px}
+        .inp{width:100%;padding:11px 14px;border:1.5px solid #E2E8F0;border-radius:9px;font:400 13.5px 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff;transition:border-color .18s,box-shadow .18s;box-sizing:border-box}
+        .inp:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
+        .inp::placeholder{color:#CBD5E1}
+        .inp.bad{border-color:#FCA5A5}
+        .pw{position:relative}.pw .inp{padding-right:44px}
+        .eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94A3B8;display:flex;padding:3px;border-radius:5px;transition:color .15s}
+        .eye:hover{color:#475569}
+        .sel{appearance:none;width:100%;padding:11px 38px 11px 14px;border:1.5px solid #E2E8F0;border-radius:9px;font:400 13.5px 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.7'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E") no-repeat right 13px center;cursor:pointer;transition:border-color .18s;box-sizing:border-box}
+        .sel:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
+        .sel.ph{color:#CBD5E1}
+        .abtn{width:100%;padding:13px;background:#DB2648;color:#fff;border:none;border-radius:10px;font:600 14px 'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:all .18s;letter-spacing:.15px}
+        .abtn:hover{background:#B91C3C;transform:translateY(-1px)}
+        .abtn:active{transform:translateY(0)}
+        .abtn:disabled{background:#CBD5E1;cursor:not-allowed;transform:none}
+        .alink{color:#DB2648;font:600 13px 'Inter',sans-serif;text-decoration:none;cursor:pointer;background:none;border:none;padding:0;transition:color .15s}
+        .alink:hover{color:#991B2F;text-decoration:underline}
+        .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .sc{padding:16px 14px;border-radius:13px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;transition:border-color .2s}
+        .sc:hover{border-color:rgba(255,255,255,.35)}
+        .sico{width:46px;height:46px;border-radius:13px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;border:1.5px solid rgba(255,255,255,.3)}
+        .qbox{border-left:2.5px solid rgba(255,255,255,.4);padding-left:16px;margin-top:auto}
+        .qt{font:400 13px/1.7 'Inter',sans-serif;color:rgba(255,255,255,.75);font-style:italic;animation:quoteIn .45s ease}
+        .qby{font:700 10px 'Inter',sans-serif;color:rgba(255,255,255,.5);letter-spacing:.8px;text-transform:uppercase;margin-top:6px}
+        .dnav{display:flex;gap:5px;margin-top:10px}
+        .dd{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.25);transition:all .4s;cursor:pointer}
+        .dd.on{width:20px;border-radius:3px;background:#fff}
+        .remrow{display:flex;align-items:center;justify-content:space-between;margin:8px 0 20px}
+        .chk{display:flex;align-items:center;gap:7px;font:400 13px 'Inter',sans-serif;color:#475569;cursor:pointer}
+        .chk input{accent-color:#DB2648;width:15px;height:15px;cursor:pointer}
+        .bn{text-align:center;font:400 12.5px 'Inter',sans-serif;color:#94A3B8;margin-top:16px}
+        .fs{animation:fadeUp .18s ease}
+        .notify{border-radius:10px;padding:12px 14px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;line-height:1.5}
+        .notify.ok{background:#F0FDF4;border:1px solid #A7F3D0;color:#065F46}
+        .notify.er{background:#FFF5F5;border:1px solid #FECACA;color:#991B1B}
+        .pt-opt{display:flex;align-items:center;gap:8px;padding:10px 13px;border:1.5px solid #E2E8F0;border-radius:9px;cursor:pointer;transition:all .15s;font:400 13.5px 'Inter',sans-serif;color:#374151}
+        .pt-opt.sel2{border-color:#DB2648;background:rgba(219,38,72,.04);color:#DB2648;font-weight:600}
+        .pt-opt:hover:not(.sel2){border-color:#CBD5E1;background:#FAFAFA}
+        .trust-bar{display:flex;align-items:center;gap:8px;padding:11px 14px;background:#F8FAFC;border-radius:9px;border:1px solid #F1F5F9;margin-top:20px}
+        @media(max-width:900px){.aw{grid-template-columns:1fr;max-width:480px}.al{padding:28px 24px;min-height:auto}.adp-hide{display:none}.ari,.tabs-bar{padding-left:28px;padding-right:28px}.g2{grid-template-columns:1fr}}
+        @media(max-width:520px){.ari,.tabs-bar{padding-left:18px;padding-right:18px}.al{padding:22px 18px}}
       `}</style>
 
-      <div className="auth-wrap">
-        {/* ── LEFT PANEL ── */}
-        <div className="auth-left">
-          <div className="auth-dot-pattern"/>
+      <div className="aw">
+
+        {/* ══ LEFT PANEL ══ */}
+        <div className="al">
+          <div className="adp"/>
 
           {/* Logo */}
-          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:36,position:"relative"}}>
-            <div style={{width:40,height:40,borderRadius:11,background:"rgba(219,38,72,.2)",border:"1px solid rgba(219,38,72,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <svg width={22} height={22} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#DB2648" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:36,position:"relative",zIndex:1}}>
+            <div style={{width:42,height:42,borderRadius:12,background:"rgba(255,255,255,.2)",border:"1.5px solid rgba(255,255,255,.35)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <svg width={24} height={24} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#fff" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </div>
             <div>
-              <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:17,color:"#fff",letterSpacing:"1.2px",lineHeight:1}}>SURE<span style={{color:"#DB2648"}}>SHIFT</span></div>
-              <div style={{fontFamily:"'Inter',sans-serif",fontSize:9.5,color:"rgba(255,255,255,.3)",letterSpacing:"2.5px",textTransform:"uppercase",marginTop:2}}>Relocation ERP · v2.0</div>
+              <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:17,color:"#fff",letterSpacing:"1.2px",lineHeight:1}}>SURESHIFT</div>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:9.5,color:"rgba(255,255,255,.55)",letterSpacing:"2.5px",textTransform:"uppercase",marginTop:2}}>Relocation ERP · v2.0</div>
             </div>
-            <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:5,padding:"4px 10px",border:"1px solid rgba(255,255,255,.1)",borderRadius:"99px",background:"rgba(255,255,255,.04)"}}>
-              <div style={{width:6,height:6,borderRadius:"50%",background:"#22C55E",animation:"pulse 2s ease infinite"}}/>
-              <span style={{fontFamily:"'Inter',sans-serif",fontSize:10.5,color:"rgba(255,255,255,.5)",fontWeight:600}}>Systems live</span>
+            <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:5,padding:"4px 11px",border:"1px solid rgba(255,255,255,.25)",borderRadius:99,background:"rgba(255,255,255,.1)"}}>
+              <div style={{width:6,height:6,borderRadius:"50%",background:"#4ADE80",animation:"pulseDot 2s ease infinite"}}/>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:10.5,color:"rgba(255,255,255,.8)",fontWeight:600}}>All systems live</span>
             </div>
           </div>
 
           {/* Headline */}
-          <div style={{position:"relative",marginBottom:28}}>
-            <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 11px",background:"rgba(219,38,72,.12)",border:"1px solid rgba(219,38,72,.2)",borderRadius:99,marginBottom:14}}>
-              <span style={{fontFamily:"'Inter',sans-serif",fontSize:10.5,fontWeight:700,color:"#FB7185",letterSpacing:".6px",textTransform:"uppercase"}}>Welcome, Team Sure Shift</span>
+          <div style={{position:"relative",zIndex:1,marginBottom:28}}>
+            <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"4px 12px",background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.25)",borderRadius:99,marginBottom:14}}>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:10.5,fontWeight:700,color:"#fff",letterSpacing:".5px",textTransform:"uppercase"}}>Welcome, Team Sure Shift</span>
             </div>
-            <h1 style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:27,color:"#fff",lineHeight:1.22,marginBottom:12}}>
-              You Keep<br/>
-              <span style={{color:"#DB2648"}}>India Moving.</span><br/>
-              We've Got Your Back.
+            <h1 style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:26,color:"#fff",lineHeight:1.25,marginBottom:11}}>
+              You Keep<br/>India Moving.<br/>
+              <span style={{color:"rgba(255,255,255,.7)",fontWeight:600,fontSize:22}}>We've Got Your Back.</span>
             </h1>
-            <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"rgba(255,255,255,.5)",lineHeight:1.7}}>Your platform for enquiries, surveys, quotations, operations, and invoices — built for speed, built for you.</p>
+            <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"rgba(255,255,255,.65)",lineHeight:1.7}}>Your command centre for enquiries, surveys, quotations, operations and invoices.</p>
           </div>
 
-          {/* Stats grid */}
-          <div className="grid-2" style={{marginBottom:28}}>
-            {STATS.map(s=>(
-              <div key={s.l} className="stat-card">
-                <div style={{width:32,height:32,borderRadius:9,background:"rgba(219,38,72,.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>{s.icon}</div>
-                <div>
-                  <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:17,color:"#fff",lineHeight:1}}>{s.n}</div>
-                  <div style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"rgba(255,255,255,.4)",marginTop:3}}>{s.l}</div>
-                </div>
+          {/* Stats grid — icons + number + label centered */}
+          <div className="g2 adp-hide" style={{marginBottom:26,position:"relative",zIndex:1}}>
+            {STATS.map(({n,l,Icon})=>(
+              <div key={l} className="sc">
+                <div className="sico"><Icon/></div>
+                <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:18,color:"#fff",lineHeight:1}}>{n}</div>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.6)",lineHeight:1.3}}>{l}</div>
               </div>
             ))}
           </div>
 
           {/* Rotating quote */}
-          <div className="quote-box">
-            <div className="quote-text" key={quoteIdx}>"{QUOTES[quoteIdx].q}"</div>
-            <div className="quote-by">— {QUOTES[quoteIdx].by}</div>
-            <div className="dot-nav">
+          <div className="qbox" style={{position:"relative",zIndex:1}}>
+            <div className="qt" key={quoteIdx}>"{QUOTES[quoteIdx].q}"</div>
+            <div className="qby">— {QUOTES[quoteIdx].by}</div>
+            <div className="dnav">
               {QUOTES.map((_,i)=>(
-                <div key={i} className={`dot${quoteIdx===i?" active":""}`} onClick={()=>setQuoteIdx(i)}/>
+                <div key={i} className={`dd${quoteIdx===i?" on":""}`} onClick={()=>setQuoteIdx(i)}/>
               ))}
             </div>
           </div>
 
           {/* Footer */}
-          <div style={{paddingTop:24,marginTop:8,borderTop:"1px solid rgba(255,255,255,.06)",fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.2)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{paddingTop:22,marginTop:12,borderTop:"1px solid rgba(255,255,255,.15)",fontFamily:"'Inter',sans-serif",fontSize:10.5,color:"rgba(255,255,255,.4)",display:"flex",justifyContent:"space-between",position:"relative",zIndex:1}}>
             <span>© 2026 Sure Shift Relocation Services Pvt. Ltd.</span>
-            <span>Delhi · Mumbai · Bangalore</span>
+            <span>Delhi · Mumbai · Bengaluru</span>
           </div>
         </div>
 
-        {/* ── RIGHT PANEL ── */}
-        <div className="auth-right">
-          {/* Tabs */}
+        {/* ══ RIGHT PANEL ══ */}
+        <div className="ar">
           <div className="tabs-bar">
             {[{id:"login",l:"Employee Login"},{id:"signup",l:"Partner Sign Up"}].map(t=>(
-              <button key={t.id} className={`tab-btn${tab===t.id?" active":""}`}
-                onClick={()=>{setTab(t.id);setLocalErr("");}}>
+              <button key={t.id} className={`tab-btn${tab===t.id?" on":""}`}
+                onClick={()=>{setTab(t.id);setMsg(null);}}>
                 {t.l}
               </button>
             ))}
           </div>
 
-          <div className="auth-right-inner">
-            {/* Error / Success banner */}
-            {err && (
-              <div style={{
-                background: isSuccess ? "rgba(5,150,105,.07)" : "rgba(220,38,38,.06)",
-                border: `1px solid ${isSuccess?"rgba(5,150,105,.25)":"rgba(220,38,38,.2)"}`,
-                borderRadius:10,padding:"11px 14px",marginBottom:20,
-                fontFamily:"'Inter',sans-serif",fontSize:13,
-                color:isSuccess?"#065F46":"#DC2626",
-                display:"flex",gap:9,alignItems:"flex-start",lineHeight:1.5
-              }}>
-                <span style={{flexShrink:0}}>{isSuccess?"✅":"⚠️"}</span>
-                <span>{err}</span>
+          <div className="ari">
+            {/* Notification banner */}
+            {msg && (
+              <div className={`notify${msg.type==="success"?" ok":" er"}`}>
+                <span style={{flexShrink:0,marginTop:1}}>
+                  {msg.type==="success" ? <IcoCheck/> : <IcoWarn/>}
+                </span>
+                <span style={{fontFamily:"'Inter',sans-serif",fontSize:13}}>{msg.text}</span>
               </div>
             )}
 
-            {/* ── LOGIN FORM ── */}
+            {/* ── LOGIN ── */}
             {tab==="login" && (
-              <div className="form-section">
+              <div className="fs">
                 <div style={{marginBottom:24}}>
-                  <h2 style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:23,color:"#0F172A",marginBottom:5}}>Good {timeGreeting()} 👋</h2>
+                  <h2 style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:22,color:"#0F172A",marginBottom:5,display:"flex",alignItems:"center",gap:9}}>
+                    Good {greeting}
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#DB2648" strokeWidth="1.8" strokeLinecap="round">
+                      <path d="M18 11V6a2 2 0 00-2-2v0a2 2 0 00-2 2v0M14 10V4a2 2 0 00-2-2v0a2 2 0 00-2 2v2M10 10.5V6a2 2 0 00-2-2v0a2 2 0 00-2 2v8a6 6 0 006 6h2a6 6 0 006-6v-2a2 2 0 00-2-2v0a2 2 0 00-2 2v0"/>
+                    </svg>
+                  </h2>
                   <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#64748B",lineHeight:1.55}}>Sign in to your Sure Shift ERP workspace and get things moving.</p>
                 </div>
 
                 <form onSubmit={handleLogin}>
-                  <div style={{marginBottom:16}}>
-                    <label className="a-label">Email address</label>
-                    <input className="a-inp" type="email" placeholder="you@sureshift.in"
-                      value={lf.email} autoFocus
-                      onChange={e=>{setLf({...lf,email:e.target.value});setLocalErr("");}}
-                      onKeyDown={e=>e.key==="Enter"&&handleLogin(e)}/>
+                  <div style={{marginBottom:14}}>
+                    <label className="lbl">Email address</label>
+                    <div style={{position:"relative"}}>
+                      <input className="inp" type="email" placeholder="you@sureshift.in" value={lf.email} autoFocus
+                        onChange={e=>{setLf({...lf,email:e.target.value});setMsg(null);}}
+                        onKeyDown={e=>e.key==="Enter"&&handleLogin(e)}
+                        style={{paddingLeft:38}}/>
+                      <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    </div>
                   </div>
 
                   <div style={{marginBottom:4}}>
-                    <label className="a-label">Password</label>
-                    <div className="pw-wrap">
-                      <input className="a-inp" type={showPwd?"text":"password"} placeholder="Enter your password"
-                        value={lf.password}
-                        onChange={e=>{setLf({...lf,password:e.target.value});setLocalErr("");}}
-                        onKeyDown={e=>e.key==="Enter"&&handleLogin(e)}/>
-                      <button type="button" className="eye-btn" onClick={()=>setShowPwd(v=>!v)} aria-label={showPwd?"Hide password":"Show password"}>
-                        {showPwd
-                          ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>
-                          : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                        }
+                    <label className="lbl">Password</label>
+                    <div className="pw">
+                      <input className="inp" type={showPwd?"text":"password"} placeholder="Enter your password" value={lf.password}
+                        onChange={e=>{setLf({...lf,password:e.target.value});setMsg(null);}}
+                        onKeyDown={e=>e.key==="Enter"&&handleLogin(e)}
+                        style={{paddingLeft:38}}/>
+                      <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                      <button type="button" className="eye" onClick={()=>setShowPwd(v=>!v)}>
+                        {showPwd ? <IcoEyeOff/> : <IcoEyeOn/>}
                       </button>
                     </div>
                   </div>
 
-                  <div className="remember-row">
-                    <label className="check-label">
+                  <div className="remrow">
+                    <label className="chk">
                       <input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}/>
                       Keep me signed in
                     </label>
-                    <button type="button" className="a-link">Forgot password?</button>
+                    <button type="button" className="alink" style={{fontSize:12.5}}>Forgot password?</button>
                   </div>
 
-                  <button type="submit" className="a-btn" disabled={busy}>
+                  <button type="submit" className="abtn" disabled={busy}>
                     {busy
-                      ? <><div style={{width:16,height:16,border:"2.5px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .75s linear infinite"}}/> Signing in…</>
-                      : "Sign in to ERP →"
+                      ? <><div style={{width:16,height:16,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .7s linear infinite"}}/> Signing in…</>
+                      : <>
+                          Sign in to ERP
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </>
                     }
                   </button>
                 </form>
 
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:20,padding:"12px 14px",background:"#F8FAFC",borderRadius:10,border:"1px solid #E8ECF4"}}>
-                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#64748B"}}>🔒 Secured with role-based access control</span>
-                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#94A3B8"}}>PocketBase v0.36</span>
+                <div className="trust-bar">
+                  <IcoShield/>
+                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#059669",fontWeight:600}}>Secured with Bank Grade Security Systems</span>
                 </div>
 
-                <p className="bottom-note">
+                <p className="bn">
                   A vendor or partner?{" "}
-                  <button className="a-link" onClick={()=>{setTab("signup");setLocalErr("");}}>Sign up here</button>
+                  <button className="alink" onClick={()=>{setTab("signup");setMsg(null);}}>Sign up here</button>
                 </p>
               </div>
             )}
 
-            {/* ── SIGNUP FORM ── */}
+            {/* ── PARTNER SIGNUP ── */}
             {tab==="signup" && (
-              <div className="form-section">
-                <div style={{marginBottom:22}}>
-                  <h2 style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:22,color:"#0F172A",marginBottom:5}}>Join Our Partner Network</h2>
-                  <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#64748B",lineHeight:1.55}}>Register as a Sure Shift partner. Your account will be activated within 24 hours.</p>
+              <div className="fs">
+                <div style={{marginBottom:20}}>
+                  <h2 style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:21,color:"#0F172A",marginBottom:5}}>Join Our Partner Network</h2>
+                  <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"#64748B",lineHeight:1.6}}>Register as a Sure Shift partner. Our team will activate your account within 24 hours.</p>
                 </div>
 
                 <form onSubmit={handleSignup}>
-                  <div className="grid-2" style={{marginBottom:12}}>
+                  <div className="g2" style={{marginBottom:12}}>
                     <div>
-                      <label className="a-label">Full name</label>
-                      <input className="a-inp" placeholder="Your full name" value={sf.name} autoFocus
-                        onChange={e=>{setSf({...sf,name:e.target.value});setLocalErr("");}}/>
+                      <label className="lbl">Full name</label>
+                      <div style={{position:"relative"}}>
+                        <input className="inp" placeholder="Your full name" value={sf.name} autoFocus
+                          onChange={e=>{setSf({...sf,name:e.target.value});setMsg(null);}}
+                          style={{paddingLeft:36}}/>
+                        <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.8" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      </div>
                     </div>
                     <div>
-                      <label className="a-label">Phone number</label>
-                      <input className="a-inp" placeholder="+91 9XXXXXXXXX" type="tel" value={sf.phone}
-                        onChange={e=>{setSf({...sf,phone:e.target.value});setLocalErr("");}}/>
+                      <label className="lbl">Phone number</label>
+                      <div style={{position:"relative"}}>
+                        <input className="inp" placeholder="+91 9XXXXXXXXX" type="tel" value={sf.phone}
+                          onChange={e=>{setSf({...sf,phone:e.target.value});setMsg(null);}}
+                          style={{paddingLeft:36}}/>
+                        <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.8" strokeLinecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81 19.79 19.79 0 01.24 2.18 2 2 0 012.21 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.72 6.72l1.28-1.29a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                      </div>
                     </div>
                   </div>
 
                   <div style={{marginBottom:12}}>
-                    <label className="a-label">Business email</label>
-                    <input className="a-inp" placeholder="you@company.com" type="email" value={sf.email}
-                      onChange={e=>{setSf({...sf,email:e.target.value});setLocalErr("");}}/>
-                  </div>
-
-                  <div className="grid-2" style={{marginBottom:12}}>
-                    <div>
-                      <label className="a-label">Company / Firm name</label>
-                      <input className="a-inp" placeholder="Your company name" value={sf.company}
-                        onChange={e=>{setSf({...sf,company:e.target.value});setLocalErr("");}}/>
-                    </div>
-                    <div>
-                      <label className="a-label">Partner type</label>
-                      <select className={`a-sel${!sf.partnerType?" placeholder":""}`} value={sf.partnerType}
-                        onChange={e=>{setSf({...sf,partnerType:e.target.value});setLocalErr("");}}>
-                        <option value="" disabled>Select type…</option>
-                        <option value="vehicle">🚛 Vehicle Partner</option>
-                        <option value="manpower">👷 Manpower Partner</option>
-                        <option value="material">📦 Material Partner</option>
-                        <option value="business">🤝 Business Partner</option>
-                      </select>
+                    <label className="lbl">Business email</label>
+                    <div style={{position:"relative"}}>
+                      <input className="inp" placeholder="you@yourcompany.com" type="email" value={sf.email}
+                        onChange={e=>{setSf({...sf,email:e.target.value});setMsg(null);}}
+                        style={{paddingLeft:36}}/>
+                      <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     </div>
                   </div>
 
-                  <div className="grid-2" style={{marginBottom:20}}>
-                    <div>
-                      <label className="a-label">Password</label>
-                      <div className="pw-wrap">
-                        <input className="a-inp" type={showPwd?"text":"password"} placeholder="Min 8 characters" value={sf.password}
-                          onChange={e=>{setSf({...sf,password:e.target.value});setLocalErr("");}}/>
-                        <button type="button" className="eye-btn" onClick={()=>setShowPwd(v=>!v)} aria-label="Toggle password">
-                          {showPwd
-                            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>
-                            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                          }
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="a-label">Confirm password</label>
-                      <div className="pw-wrap">
-                        <input className="a-inp" type={showCpwd?"text":"password"} placeholder="Repeat password"
-                          value={sf.confirm}
-                          style={{borderColor: sf.confirm && sf.confirm!==sf.password ? "#F87171" : ""}}
-                          onChange={e=>{setSf({...sf,confirm:e.target.value});setLocalErr("");}}/>
-                        <button type="button" className="eye-btn" onClick={()=>setShowCpwd(v=>!v)} aria-label="Toggle confirm">
-                          {showCpwd
-                            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>
-                            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                          }
-                        </button>
-                      </div>
+                  <div style={{marginBottom:12}}>
+                    <label className="lbl">Company / Firm name</label>
+                    <div style={{position:"relative"}}>
+                      <input className="inp" placeholder="Your company or firm name" value={sf.company}
+                        onChange={e=>{setSf({...sf,company:e.target.value});setMsg(null);}}
+                        style={{paddingLeft:36}}/>
+                      <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     </div>
                   </div>
 
-                  <button type="submit" className="a-btn">Register as Partner →</button>
+                  {/* Partner type — card selector */}
+                  <div style={{marginBottom:18}}>
+                    <label className="lbl">Partner type</label>
+                    <div className="g2">
+                      {PARTNER_TYPES.map(({v,l,Icon})=>(
+                        <div key={v} className={`pt-opt${sf.partnerType===v?" sel2":""}`}
+                          onClick={()=>{setSf({...sf,partnerType:v});setMsg(null);}}>
+                          <Icon/>
+                          <span style={{fontSize:13}}>{l}</span>
+                          {sf.partnerType===v && (
+                            <svg style={{marginLeft:"auto",flexShrink:0}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DB2648" strokeWidth="2.2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button type="submit" className="abtn" disabled={busy}>
+                    {busy
+                      ? <><div style={{width:16,height:16,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .7s linear infinite"}}/> Submitting…</>
+                      : <>
+                          Submit Registration
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        </>
+                    }
+                  </button>
                 </form>
 
-                <p className="bottom-note">
+                <div style={{marginTop:16,padding:"11px 14px",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:9,display:"flex",gap:9,alignItems:"flex-start"}}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#92400E",lineHeight:1.55}}>Partner accounts are reviewed by our team. You'll receive login credentials by email within 24 hours of approval.</span>
+                </div>
+
+                <p className="bn">
                   Already have an account?{" "}
-                  <button className="a-link" onClick={()=>{setTab("login");setLocalErr("");}}>Sign in here</button>
+                  <button className="alink" onClick={()=>{setTab("login");setMsg(null);}}>Sign in here</button>
                 </p>
               </div>
             )}
@@ -424,11 +502,6 @@ function Login() {
       </div>
     </div>
   );
-}
-
-function timeGreeting() {
-  const h = new Date().getHours();
-  return h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
 }
 
 function Shell() {
