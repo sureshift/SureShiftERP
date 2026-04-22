@@ -133,6 +133,13 @@ function Login() {
         @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(10px)}}
         @media (max-width: 920px){
           .auth-shell{max-width:620px;grid-template-columns:1fr}
+        .auth-shell{width:100%;max-width:860px;display:grid;grid-template-columns:1fr 1fr;border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.4)}
+        .auth-left{background:linear-gradient(160deg,#DB2648,#91163A);padding:44px 36px;display:flex;flex-direction:column}
+        .auth-right{background:#fff}
+        .auth-tabs{display:flex;border-bottom:1px solid #E8ECF4}
+        .auth-content{padding:28px 32px}
+        @media (max-width: 920px){
+          .auth-shell{max-width:560px;grid-template-columns:1fr}
           .auth-left{padding:28px 24px}
           .auth-content{padding:22px 20px}
         }
@@ -192,6 +199,7 @@ function Login() {
         <div className="auth-right">
           <div className="auth-tabs">
             {[{id:"login",l:"Sign In"},{id:"signup",l:"Sign Up"}].map(t=>(
+            {[{id:"login",l:"Sign In"},{id:"demo",l:"Quick Demo"}].map(t=>(
               <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"15px",border:"none",background:"transparent",fontFamily:"'Inter',sans-serif",fontSize:13.5,fontWeight:tab===t.id?700:500,color:tab===t.id?"#DB2648":"#94A3B8",borderBottom:`2.5px solid ${tab===t.id?"#DB2648":"transparent"}`,cursor:"pointer",transition:"all .15s"}}>{t.l}</button>
             ))}
           </div>
