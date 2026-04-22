@@ -197,7 +197,6 @@ function Login() {
         {/* Right panel */}
         <div className="auth-right">
           <div className="auth-tabs">
-            {[{id:"login",l:"Sign In"},{id:"signup",l:"Sign Up"}].map(t=>(
             {[{id:"login",l:"Sign In"},{id:"demo",l:"Quick Demo"}].map(t=>(
               <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"15px",border:"none",background:"transparent",fontFamily:"'Inter',sans-serif",fontSize:13.5,fontWeight:tab===t.id?700:500,color:tab===t.id?"#DB2648":"#94A3B8",borderBottom:`2.5px solid ${tab===t.id?"#DB2648":"transparent"}`,cursor:"pointer",transition:"all .15s"}}>{t.l}</button>
             ))}
