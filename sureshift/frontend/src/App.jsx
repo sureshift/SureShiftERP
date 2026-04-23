@@ -74,6 +74,8 @@ function Login() {
   const [tab, setTab]         = useState("login");
   const [showPwd, setShowPwd] = useState(false);
   const [busy, setBusy]       = useState(false);
+  const [ff, setFf]            = useState(null); // focused field
+  const ic = f => ff === f ? "#DB2648" : "#CBD5E1"; // icon color helper
   const [msg, setMsg]         = useState(null); // {type:"error"|"success", text}
   const [quoteIdx, setQuoteIdx]= useState(0);
   const [remember, setRemember]= useState(false);
@@ -357,9 +359,10 @@ function Login() {
                     <div style={{position:"relative"}}>
                       <input className="inp" type="email" placeholder="you@sureshift.in" value={lf.email} autoFocus
                         onChange={e=>{setLf({...lf,email:e.target.value});setMsg(null);}}
+                        onFocus={()=>setFf("l-email")} onBlur={()=>setFf(null)}
                         onKeyDown={e=>e.key==="Enter"&&handleLogin(e)}
                         style={{paddingLeft:38}}/>
-                      <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                      <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ic("l-email")} strokeWidth="1.8" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     </div>
                   </div>
 
@@ -368,9 +371,10 @@ function Login() {
                     <div className="pw">
                       <input className="inp" type={showPwd?"text":"password"} placeholder="Enter your password" value={lf.password}
                         onChange={e=>{setLf({...lf,password:e.target.value});setMsg(null);}}
+                        onFocus={()=>setFf("l-pwd")} onBlur={()=>setFf(null)}
                         onKeyDown={e=>e.key==="Enter"&&handleLogin(e)}
                         style={{paddingLeft:38}}/>
-                      <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                      <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ic("l-pwd")} strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                       <button type="button" className="eye" onClick={()=>setShowPwd(v=>!v)}>
                         {showPwd ? <IcoEyeOff/> : <IcoEyeOn/>}
                       </button>
@@ -423,8 +427,9 @@ function Login() {
                       <div style={{position:"relative"}}>
                         <input className="inp" placeholder="Your full name" value={sf.name} autoFocus
                           onChange={e=>{setSf({...sf,name:e.target.value});setMsg(null);}}
+                          onFocus={()=>setFf("s-name")} onBlur={()=>setFf(null)}
                           style={{paddingLeft:36}}/>
-                        <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.8" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ic("s-name")} strokeWidth="1.8" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                       </div>
                     </div>
                     <div>
@@ -432,8 +437,9 @@ function Login() {
                       <div style={{position:"relative"}}>
                         <input className="inp" placeholder="+91 9XXXXXXXXX" type="tel" value={sf.phone}
                           onChange={e=>{setSf({...sf,phone:e.target.value});setMsg(null);}}
+                          onFocus={()=>setFf("s-phone")} onBlur={()=>setFf(null)}
                           style={{paddingLeft:36}}/>
-                        <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.8" strokeLinecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81 19.79 19.79 0 01.24 2.18 2 2 0 012.21 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.72 6.72l1.28-1.29a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                        <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ic("s-phone")} strokeWidth="1.8" strokeLinecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81 19.79 19.79 0 01.24 2.18 2 2 0 012.21 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.72 6.72l1.28-1.29a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
                       </div>
                     </div>
                   </div>
@@ -443,8 +449,9 @@ function Login() {
                     <div style={{position:"relative"}}>
                       <input className="inp" placeholder="you@yourcompany.com" type="email" value={sf.email}
                         onChange={e=>{setSf({...sf,email:e.target.value});setMsg(null);}}
+                        onFocus={()=>setFf("s-email")} onBlur={()=>setFf(null)}
                         style={{paddingLeft:36}}/>
-                      <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.8" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                      <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ic("s-email")} strokeWidth="1.8" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     </div>
                   </div>
 
@@ -453,8 +460,9 @@ function Login() {
                     <div style={{position:"relative"}}>
                       <input className="inp" placeholder="Your company or firm name" value={sf.company}
                         onChange={e=>{setSf({...sf,company:e.target.value});setMsg(null);}}
+                        onFocus={()=>setFf("s-company")} onBlur={()=>setFf(null)}
                         style={{paddingLeft:36}}/>
-                      <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                      <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ic("s-company")} strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     </div>
                   </div>
 
@@ -682,47 +690,652 @@ function PageHeader({title,action}){
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
-function DashboardPage(){
-  const {items:enqs,loading:eL}=useCollection("enquiries",{sort:"-created",perPage:100});
-  const {items:cfrs,loading:cL}=useCollection("cfr",{sort:"-created",perPage:100});
-  const {items:invs,loading:iL}=useCollection("invoices",{sort:"-created",perPage:100});
-  const {items:vens,loading:vL}=useCollection("vendors",{sort:"-created"});
-  const open=cfrs.filter(c=>!["delivered","cancelled"].includes(c.status)).length;
-  const outstanding=invs.reduce((s,i)=>s+(i.outstanding||0),0);
-  const active=vens.filter(v=>v.status==="active").length;
-  return(
-    <div className="page-fade">
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:24}}>
-        <StatCard label="Total Enquiries" value={eL?"…":enqs.length} sub="loaded" icon="📥" color="#2563EB"/>
-        <StatCard label="Active Bookings" value={cL?"…":open} sub="in progress" icon="📦" color="#D97706"/>
-        <StatCard label="Outstanding" value={iL?"…":`₹${(outstanding/1000).toFixed(0)}K`} sub="pending" icon="💳" color="#DB2648"/>
-        <StatCard label="Active Vendors" value={vL?"…":active} sub="registered" icon="🤝" color="#059669"/>
+// ─────────────────────────────────────────────────────────────────────────────
+//  DASHBOARD — role-aware router
+// ─────────────────────────────────────────────────────────────────────────────
+function DashboardPage() {
+  const { user } = useAppAuth();
+  const role = user?.role;
+  if (role === "super_admin")  return <SuperAdminDash/>;
+  if (role === "branch_head")  return <BranchHeadDash/>;
+  if (role === "sales_exec")   return <SalesDash/>;
+  if (role === "ops_exec")     return <OpsDash/>;
+  if (role === "finance_exec") return <FinanceDash/>;
+  if (role === "surveyor")     return <SurveyorDash/>;
+  if (role === "vehicle_vendor" || role === "manpower_vendor") return <VendorDash/>;
+  return <SuperAdminDash/>;
+}
+
+// ── shared mini primitives ────────────────────────────────────────────────────
+function KpiCard({ label, value, sub, color="#DB2648", icon, loading }) {
+  return (
+    <div style={{background:"#fff",borderRadius:14,border:"1px solid #F1F5F9",padding:"18px 20px",boxShadow:"0 1px 4px rgba(15,23,42,.04)"}}>
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}}>
+        <div style={{width:44,height:44,borderRadius:12,background:`${color}12`,border:`1px solid ${color}22`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          {icon}
+        </div>
+        {sub && <span style={{fontFamily:"'Inter',sans-serif",fontSize:10.5,fontWeight:700,color,background:`${color}10`,padding:"3px 9px",borderRadius:99,textTransform:"uppercase",letterSpacing:".4px"}}>{sub}</span>}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-        <div className="erp-card">
-          <div style={{fontFamily:"'Poppins',sans-serif",fontSize:13.5,fontWeight:700,color:"#0F172A",marginBottom:14}}>Recent Enquiries</div>
-          <DataTable loading={eL} rows={enqs.slice(0,6)} cols={[
-            {key:"enq_number",label:"Ref #"},
-            {key:"name",label:"Customer"},
-            {key:"move_type",label:"Type",render:r=><STag v={r.move_type}/>},
-            {key:"stage",label:"Stage",render:r=><STag v={r.stage}/>},
-          ]} empty="No enquiries"/>
-        </div>
-        <div className="erp-card">
-          <div style={{fontFamily:"'Poppins',sans-serif",fontSize:13.5,fontWeight:700,color:"#0F172A",marginBottom:14}}>Recent Bookings</div>
-          <DataTable loading={cL} rows={cfrs.slice(0,6)} cols={[
-            {key:"cfr_number",label:"CFR #"},
-            {key:"grand_total",label:"Value",render:r=>`₹${(r.grand_total||0).toLocaleString("en-IN")}`},
-            {key:"move_date",label:"Move Date"},
-            {key:"status",label:"Status",render:r=><STag v={r.status}/>},
-          ]} empty="No bookings"/>
-        </div>
+      <div style={{fontFamily:"'Poppins',sans-serif",fontSize:27,fontWeight:800,color:"#0F172A",lineHeight:1,marginBottom:5}}>
+        {loading ? <span style={{color:"#E2E8F0"}}>—</span> : value}
+      </div>
+      <div style={{fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"#94A3B8",fontWeight:500}}>{label}</div>
+    </div>
+  );
+}
+
+function SectionTitle({ children, right }) {
+  return (
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+      <div style={{fontFamily:"'Poppins',sans-serif",fontSize:13.5,fontWeight:700,color:"#0F172A"}}>{children}</div>
+      {right}
+    </div>
+  );
+}
+
+function Card({ children, style }) {
+  return <div style={{background:"#fff",borderRadius:14,border:"1px solid #F1F5F9",padding:"20px",boxShadow:"0 1px 4px rgba(15,23,42,.04)",...style}}>{children}</div>;
+}
+
+function Pipeline({ stages, data, colorMap }) {
+  const total = data.length || 1;
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      {stages.map(s => {
+        const n = data.filter(d => d.stage === s || d.status === s).length;
+        const pct = Math.round(n / total * 100);
+        const c = colorMap[s] || "#94A3B8";
+        return (
+          <div key={s}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:12.5,fontWeight:600,color:"#374151",textTransform:"capitalize"}}>{s}</span>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#94A3B8"}}>{n} <span style={{color:c,fontWeight:700}}>({pct}%)</span></span>
+            </div>
+            <div style={{height:7,background:"#F1F5F9",borderRadius:20,overflow:"hidden"}}>
+              <div style={{height:"100%",width:`${pct}%`,background:c,borderRadius:20,transition:"width .6s ease"}}/>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function MiniTable({ cols, rows, loading }) {
+  if (loading) return <div style={{display:"flex",justifyContent:"center",padding:28}}><div style={{width:24,height:24,border:"3px solid rgba(219,38,72,.15)",borderTopColor:"#DB2648",borderRadius:"50%",animation:"spin .75s linear infinite"}}/></div>;
+  if (!rows?.length) return <div style={{textAlign:"center",padding:"24px 0",fontFamily:"'Inter',sans-serif",fontSize:13,color:"#CBD5E1"}}>No records yet</div>;
+  return (
+    <table style={{width:"100%",borderCollapse:"collapse"}}>
+      <thead>
+        <tr style={{borderBottom:"1.5px solid #F1F5F9"}}>
+          {cols.map(c=><th key={c.k} style={{padding:"6px 10px",textAlign:"left",fontFamily:"'Inter',sans-serif",fontSize:9.5,fontWeight:700,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".6px",whiteSpace:"nowrap"}}>{c.l}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.slice(0,7).map((r,i)=>(
+          <tr key={r.id||i} style={{borderBottom:"1px solid #F8FAFC"}}>
+            {cols.map(c=><td key={c.k} style={{padding:"9px 10px",fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"#374151",whiteSpace:"nowrap"}}>{c.r?c.r(r):r[c.k]||<span style={{color:"#E2E8F0"}}>—</span>}</td>)}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function GreetBanner({ name, role, branch, sub }) {
+  const h = new Date().getHours();
+  const g = h<12?"Good morning":"Good afternoon";
+  const rInfo = ROLES[role]||{};
+  return (
+    <div style={{marginBottom:24,display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+      <div>
+        <h2 style={{fontFamily:"'Poppins',sans-serif",fontSize:21,fontWeight:700,color:"#0F172A",marginBottom:4}}>{g}, {(name||"").split(" ")[0]} {rInfo.icon}</h2>
+        <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#64748B"}}>{sub}</p>
+      </div>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        <span style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:700,color:rInfo.color,background:`${rInfo.color}12`,padding:"5px 12px",borderRadius:99}}>{rInfo.label}</span>
+        {branch && <span style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:700,color:"#475569",background:"#F1F5F9",padding:"5px 12px",borderRadius:99}}>{branch} branch</span>}
       </div>
     </div>
   );
 }
 
-// ── ENQUIRIES ─────────────────────────────────────────────────────────────────
+// ── SVG icon set ─────────────────────────────────────────────────────────────
+const I = {
+  enquiry:   c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#DB2648"} strokeWidth="1.9" strokeLinecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+  booking:   c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#D97706"} strokeWidth="1.9" strokeLinecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>,
+  revenue:   c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#059669"} strokeWidth="1.9" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
+  invoice:   c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#7C3AED"} strokeWidth="1.9" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+  vendor:    c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#0D9488"} strokeWidth="1.9" strokeLinecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
+  survey:    c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#2563EB"} strokeWidth="1.9" strokeLinecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>,
+  truck:     c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#0284C7"} strokeWidth="1.9" strokeLinecap="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>,
+  users:     c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#DB2648"} strokeWidth="1.9" strokeLinecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
+  trend:     c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#059669"} strokeWidth="1.9" strokeLinecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
+  job:       c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#D97706"} strokeWidth="1.9" strokeLinecap="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>,
+  payout:    c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#7C3AED"} strokeWidth="1.9" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+  rating:    c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#D97706"} strokeWidth="1.9" strokeLinecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  pending:   c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#DB2648"} strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+};
+const fmt = n => { if(!n)return"₹0"; if(n>=10000000)return`₹${(n/10000000).toFixed(1)}Cr`; if(n>=100000)return`₹${(n/100000).toFixed(1)}L`; if(n>=1000)return`₹${(n/1000).toFixed(0)}K`; return`₹${n}`; };
+
+// ──────────────────────────────────────────────────────────────────────────────
+//  1. SUPER ADMIN DASHBOARD
+// ──────────────────────────────────────────────────────────────────────────────
+function SuperAdminDash() {
+  const { user } = useAppAuth();
+  const { items:enqs,  loading:eL } = useCollection("enquiries",  { sort:"-created", perPage:500 });
+  const { items:cfrs,  loading:cL } = useCollection("cfr",        { sort:"-created", perPage:500 });
+  const { items:invs,  loading:iL } = useCollection("invoices",   { sort:"-created", perPage:500 });
+  const { items:vens,  loading:vL } = useCollection("vendors",    { sort:"-created" });
+  const { items:users, loading:uL } = useCollection("users",      { sort:"-created" });
+  const { items:pReqs, loading:pL } = useCollection("partner_requests", { sort:"-created", filter:`status="pending"` });
+
+  const totalRev    = cfrs.reduce((s,c)=>s+(c.grand_total||0),0);
+  const collected   = cfrs.reduce((s,c)=>s+(c.total_paid||0),0);
+  const outstanding = invs.reduce((s,i)=>s+(i.outstanding||0),0);
+  const openCFR     = cfrs.filter(c=>!["delivered","cancelled"].includes(c.status)).length;
+
+  const stageColors = { new:"#2563EB",survey:"#D97706",quotation:"#7C3AED",recalling:"#0D9488",cfr:"#059669",lost:"#DC2626" };
+  const cfrColors   = { "token-pending":"#D97706","token-received":"#059669",confirmed:"#2563EB","vendor-assigned":"#7C3AED","ops-ready":"#0D9488","in-transit":"#DB2648",delivered:"#059669",cancelled:"#DC2626" };
+
+  const branchRevenue = BRANCHES.map(b => ({
+    b, rev: cfrs.filter(c => {
+      const enq = enqs.find(e => e.id === c.enquiry_id);
+      return enq?.branch === b;
+    }).reduce((s,c)=>s+(c.grand_total||0),0)
+  })).sort((a,b)=>b.rev-a.rev);
+
+  return (
+    <div className="page-fade">
+      <GreetBanner name={user?.name} role={user?.role} branch={user?.branch}
+        sub="Full system overview — all branches, all operations, all financials."/>
+
+      {/* KPI row 1 */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:16}}>
+        <KpiCard label="Total Enquiries"   value={eL?"—":enqs.length}        sub="all time"     color="#2563EB" loading={eL} icon={I.enquiry("#2563EB")}/>
+        <KpiCard label="Active Bookings"   value={cL?"—":openCFR}            sub="in progress"  color="#D97706" loading={cL} icon={I.booking("#D97706")}/>
+        <KpiCard label="Gross Revenue"     value={cL?"—":fmt(totalRev)}      sub="all CFRs"     color="#059669" loading={cL} icon={I.revenue("#059669")}/>
+        <KpiCard label="Outstanding"       value={iL?"—":fmt(outstanding)}   sub="unpaid"       color="#DB2648" loading={iL} icon={I.invoice("#DB2648")}/>
+      </div>
+      {/* KPI row 2 */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:24}}>
+        <KpiCard label="Cash Collected"    value={cL?"—":fmt(collected)}     sub="payments in"  color="#059669" loading={cL} icon={I.payout("#059669")}/>
+        <KpiCard label="Active Vendors"    value={vL?"—":vens.filter(v=>v.status==="active").length} sub="registered" color="#0D9488" loading={vL} icon={I.vendor("#0D9488")}/>
+        <KpiCard label="Total Users"       value={uL?"—":users.length}       sub="all roles"    color="#7C3AED" loading={uL} icon={I.users("#7C3AED")}/>
+        <KpiCard label="Partner Requests"  value={pL?"—":pReqs.length}       sub="pending"      color="#DB2648" loading={pL} icon={I.pending("#DB2648")}/>
+      </div>
+
+      {/* Charts row */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:16}}>
+        <Card>
+          <SectionTitle>Enquiry Pipeline</SectionTitle>
+          {eL ? <div style={{height:120,display:"flex",alignItems:"center",justifyContent:"center",color:"#E2E8F0"}}>Loading…</div>
+              : <Pipeline stages={["new","survey","quotation","recalling","cfr","lost"]} data={enqs} colorMap={stageColors}/>}
+        </Card>
+        <Card>
+          <SectionTitle>Booking Pipeline</SectionTitle>
+          {cL ? <div style={{height:120,display:"flex",alignItems:"center",justifyContent:"center",color:"#E2E8F0"}}>Loading…</div>
+              : <Pipeline stages={["token-pending","confirmed","vendor-assigned","in-transit","delivered","cancelled"]} data={cfrs.map(c=>({...c,stage:c.status}))} colorMap={cfrColors}/>}
+        </Card>
+        <Card>
+          <SectionTitle>Revenue by Branch</SectionTitle>
+          <div style={{display:"flex",flexDirection:"column",gap:9}}>
+            {branchRevenue.map(({b,rev})=>{
+              const max = branchRevenue[0]?.rev||1;
+              const pct = Math.round(rev/max*100);
+              return (
+                <div key={b}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                    <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:600,color:"#374151"}}>{b}</span>
+                    <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#94A3B8"}}>{fmt(rev)}</span>
+                  </div>
+                  <div style={{height:6,background:"#F1F5F9",borderRadius:20,overflow:"hidden"}}>
+                    <div style={{height:"100%",width:`${pct}%`,background:"#DB2648",borderRadius:20,transition:"width .6s"}}/>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      </div>
+
+      {/* Tables row */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+        <Card>
+          <SectionTitle>Recent Enquiries</SectionTitle>
+          <MiniTable loading={eL} rows={enqs.slice(0,7)} cols={[
+            {k:"enq_number",l:"Ref #",r:r=><code style={{fontSize:11,color:"#0F172A",fontWeight:700}}>{r.enq_number||"—"}</code>},
+            {k:"name",l:"Customer",r:r=><span style={{fontWeight:600}}>{r.name}</span>},
+            {k:"branch",l:"Branch"},
+            {k:"stage",l:"Stage",r:r=><STag v={r.stage}/>},
+          ]}/>
+        </Card>
+        <Card>
+          <SectionTitle>Partner Requests{pReqs.length>0&&<span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#DB2648",background:"#FFF1F2",padding:"3px 9px",borderRadius:99}}>{pReqs.length} pending</span>}</SectionTitle>
+          <MiniTable loading={pL} rows={pReqs} cols={[
+            {k:"name",l:"Name",r:r=><span style={{fontWeight:600}}>{r.name}</span>},
+            {k:"company",l:"Company"},
+            {k:"partner_type",l:"Type",r:r=><STag v={r.partner_type}/>},
+            {k:"status",l:"Status",r:r=><STag v={r.status}/>},
+          ]}/>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+//  2. BRANCH HEAD DASHBOARD
+// ──────────────────────────────────────────────────────────────────────────────
+function BranchHeadDash() {
+  const { user } = useAppAuth();
+  const branch = user?.branch;
+  const bFilter = branch ? `branch="${branch}"` : "";
+
+  const { items:enqs, loading:eL } = useCollection("enquiries", { sort:"-created", filter:bFilter, perPage:300 });
+  const { items:cfrs, loading:cL } = useCollection("cfr",       { sort:"-created", perPage:300 });
+  const { items:invs, loading:iL } = useCollection("invoices",  { sort:"-created", perPage:300 });
+  const { items:vens, loading:vL } = useCollection("vendors",   { filter:bFilter });
+
+  const branchCFRs = cfrs.filter(c => enqs.some(e=>e.id===c.enquiry_id));
+  const rev = branchCFRs.reduce((s,c)=>s+(c.grand_total||0),0);
+  const col = branchCFRs.reduce((s,c)=>s+(c.total_paid||0),0);
+  const out = invs.reduce((s,i)=>s+(i.outstanding||0),0);
+  const newToday = enqs.filter(e=>e.created?.slice(0,10)===new Date().toISOString().slice(0,10)).length;
+  const stageColors = { new:"#2563EB",survey:"#D97706",quotation:"#7C3AED",recalling:"#0D9488",cfr:"#059669",lost:"#DC2626" };
+
+  return (
+    <div className="page-fade">
+      <GreetBanner name={user?.name} role={user?.role} branch={branch}
+        sub={`Branch overview for ${branch} — your team's performance at a glance.`}/>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:24}}>
+        <KpiCard label="Branch Enquiries"  value={eL?"—":enqs.length}        sub="total"       color="#2563EB" loading={eL} icon={I.enquiry("#2563EB")}/>
+        <KpiCard label="New Today"         value={eL?"—":newToday}           sub="today"       color="#DB2648" loading={eL} icon={I.pending("#DB2648")}/>
+        <KpiCard label="Branch Revenue"    value={cL?"—":fmt(rev)}           sub="all bookings" color="#059669" loading={cL} icon={I.revenue("#059669")}/>
+        <KpiCard label="Outstanding"       value={iL?"—":fmt(out)}           sub="to collect"   color="#7C3AED" loading={iL} icon={I.invoice("#7C3AED")}/>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1.4fr",gap:16,marginBottom:16}}>
+        <Card>
+          <SectionTitle>Enquiry Stages — {branch}</SectionTitle>
+          {eL ? <div style={{height:140,display:"flex",alignItems:"center",justifyContent:"center",color:"#E2E8F0"}}>Loading…</div>
+              : <Pipeline stages={["new","survey","quotation","recalling","cfr","lost"]} data={enqs} colorMap={stageColors}/>}
+        </Card>
+        <Card>
+          <SectionTitle>Recent Branch Enquiries</SectionTitle>
+          <MiniTable loading={eL} rows={enqs.slice(0,7)} cols={[
+            {k:"enq_number",l:"Ref #",r:r=><code style={{fontSize:11,fontWeight:700}}>{r.enq_number||"—"}</code>},
+            {k:"name",l:"Customer",r:r=><span style={{fontWeight:600}}>{r.name}</span>},
+            {k:"phone",l:"Phone"},
+            {k:"move_type",l:"Type",r:r=><STag v={r.move_type}/>},
+            {k:"stage",l:"Stage",r:r=><STag v={r.stage}/>},
+          ]}/>
+        </Card>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+        <Card>
+          <SectionTitle>Active Bookings</SectionTitle>
+          <MiniTable loading={cL} rows={branchCFRs.filter(c=>!["delivered","cancelled"].includes(c.status)).slice(0,6)} cols={[
+            {k:"cfr_number",l:"CFR #",r:r=><code style={{fontSize:11,fontWeight:700}}>{r.cfr_number||"—"}</code>},
+            {k:"grand_total",l:"Value",r:r=>`₹${(r.grand_total||0).toLocaleString("en-IN")}`},
+            {k:"move_date",l:"Date"},
+            {k:"status",l:"Status",r:r=><STag v={r.status}/>},
+          ]}/>
+        </Card>
+        <Card>
+          <SectionTitle>Vendors — {branch}</SectionTitle>
+          <MiniTable loading={vL} rows={vens.slice(0,6)} cols={[
+            {k:"name",l:"Vendor",r:r=><span style={{fontWeight:600}}>{r.name}</span>},
+            {k:"type",l:"Type",r:r=><STag v={r.type}/>},
+            {k:"total_jobs",l:"Jobs",r:r=>r.total_jobs||0},
+            {k:"status",l:"Status",r:r=><STag v={r.status}/>},
+          ]}/>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+//  3. SALES EXECUTIVE DASHBOARD
+// ──────────────────────────────────────────────────────────────────────────────
+function SalesDash() {
+  const { user } = useAppAuth();
+  const { items:enqs, loading:eL } = useCollection("enquiries",  { sort:"-created", perPage:200 });
+  const { items:quots,loading:qL } = useCollection("quotations", { sort:"-created", perPage:200 });
+  const stageColors = { new:"#2563EB",survey:"#D97706",quotation:"#7C3AED",recalling:"#0D9488",cfr:"#059669",lost:"#DC2626" };
+  const quotColors  = { draft:"#94A3B8",sent:"#2563EB",viewed:"#D97706",negotiating:"#7C3AED",approved:"#059669",converted:"#059669",lost:"#DC2626" };
+  const convRate = enqs.length ? Math.round(enqs.filter(e=>e.stage==="cfr").length/enqs.length*100) : 0;
+  const lostRate = enqs.length ? Math.round(enqs.filter(e=>e.stage==="lost").length/enqs.length*100) : 0;
+
+  return (
+    <div className="page-fade">
+      <GreetBanner name={user?.name} role={user?.role} branch={user?.branch}
+        sub="Your pipeline, your conversions, your numbers — keep pushing."/>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:24}}>
+        <KpiCard label="My Enquiries"       value={eL?"—":enqs.length}       sub="total"       color="#2563EB" loading={eL} icon={I.enquiry("#2563EB")}/>
+        <KpiCard label="Quotations Sent"    value={qL?"—":quots.filter(q=>q.status==="sent"||q.status==="viewed").length} sub="active" color="#7C3AED" loading={qL} icon={I.invoice("#7C3AED")}/>
+        <KpiCard label="Conversion Rate"    value={eL?"—":`${convRate}%`}    sub="enq → CFR"   color="#059669" loading={eL} icon={I.trend("#059669")}/>
+        <KpiCard label="Lost Rate"          value={eL?"—":`${lostRate}%`}    sub="needs review" color="#DB2648" loading={eL} icon={I.pending("#DB2648")}/>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+        <Card>
+          <SectionTitle>My Enquiry Pipeline</SectionTitle>
+          {eL ? <div style={{height:150,display:"flex",alignItems:"center",justifyContent:"center",color:"#E2E8F0"}}>Loading…</div>
+              : <Pipeline stages={["new","survey","quotation","recalling","cfr","lost"]} data={enqs} colorMap={stageColors}/>}
+        </Card>
+        <Card>
+          <SectionTitle>Quotation Status</SectionTitle>
+          {qL ? <div style={{height:150,display:"flex",alignItems:"center",justifyContent:"center",color:"#E2E8F0"}}>Loading…</div>
+              : <Pipeline stages={["draft","sent","viewed","negotiating","approved","converted","lost"]} data={quots.map(q=>({...q,stage:q.status}))} colorMap={quotColors}/>}
+        </Card>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1.2fr 1fr",gap:16}}>
+        <Card>
+          <SectionTitle>Recent Enquiries</SectionTitle>
+          <MiniTable loading={eL} rows={enqs.slice(0,8)} cols={[
+            {k:"enq_number",l:"Ref",r:r=><code style={{fontSize:11,fontWeight:700}}>{r.enq_number||"—"}</code>},
+            {k:"name",l:"Customer",r:r=><span style={{fontWeight:600}}>{r.name}</span>},
+            {k:"phone",l:"Phone"},
+            {k:"move_type",l:"Type",r:r=><STag v={r.move_type}/>},
+            {k:"stage",l:"Stage",r:r=><STag v={r.stage}/>},
+          ]}/>
+        </Card>
+        <Card>
+          <SectionTitle>Recent Quotations</SectionTitle>
+          <MiniTable loading={qL} rows={quots.slice(0,7)} cols={[
+            {k:"quot_number",l:"Quot #",r:r=><code style={{fontSize:11,fontWeight:700}}>{r.quot_number||"—"}</code>},
+            {k:"grand_total",l:"Total",r:r=>`₹${(r.grand_total||0).toLocaleString("en-IN")}`},
+            {k:"status",l:"Status",r:r=><STag v={r.status}/>},
+          ]}/>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+//  4. OPS EXECUTIVE DASHBOARD
+// ──────────────────────────────────────────────────────────────────────────────
+function OpsDash() {
+  const { user } = useAppAuth();
+  const { items:cfrs, loading:cL } = useCollection("cfr",        { sort:"-created", perPage:200 });
+  const { items:ops,  loading:oL } = useCollection("operations", { sort:"-created", perPage:200 });
+  const { items:vens, loading:vL } = useCollection("vendors",    { sort:"name" });
+
+  const active  = cfrs.filter(c=>!["delivered","cancelled"].includes(c.status));
+  const inTrans = cfrs.filter(c=>c.status==="in-transit");
+  const opColors = { "dispatch-mat":"#D97706",packing:"#7C3AED",loading:"#2563EB","in-transit":"#DB2648",unloading:"#0D9488",delivered:"#059669" };
+
+  return (
+    <div className="page-fade">
+      <GreetBanner name={user?.name} role={user?.role} branch={user?.branch}
+        sub="Manage dispatches, track moves, coordinate vendors. Every route counts."/>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:24}}>
+        <KpiCard label="Active Bookings"    value={cL?"—":active.length}    sub="ongoing"     color="#D97706" loading={cL} icon={I.booking("#D97706")}/>
+        <KpiCard label="In Transit"         value={cL?"—":inTrans.length}   sub="on the road" color="#DB2648" loading={cL} icon={I.truck("#DB2648")}/>
+        <KpiCard label="Operations Logged"  value={oL?"—":ops.length}       sub="total"       color="#2563EB" loading={oL} icon={I.job("#2563EB")}/>
+        <KpiCard label="Active Vendors"     value={vL?"—":vens.filter(v=>v.status==="active").length} sub="available" color="#059669" loading={vL} icon={I.vendor("#059669")}/>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+        <Card>
+          <SectionTitle>Operations Stage Breakdown</SectionTitle>
+          {oL ? <div style={{height:140,display:"flex",alignItems:"center",justifyContent:"center",color:"#E2E8F0"}}>Loading…</div>
+              : <Pipeline stages={["dispatch-mat","packing","loading","in-transit","unloading","delivered"]} data={ops.map(o=>({...o,stage:o.stage}))} colorMap={opColors}/>}
+        </Card>
+        <Card>
+          <SectionTitle>Active Moves</SectionTitle>
+          <MiniTable loading={cL} rows={active.slice(0,7)} cols={[
+            {k:"cfr_number",l:"CFR #",r:r=><code style={{fontSize:11,fontWeight:700}}>{r.cfr_number||"—"}</code>},
+            {k:"move_date",l:"Move Date"},
+            {k:"vehicle",l:"Vehicle"},
+            {k:"vehicle_no",l:"Reg No"},
+            {k:"status",l:"Status",r:r=><STag v={r.status}/>},
+          ]}/>
+        </Card>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+        <Card>
+          <SectionTitle>Recent Operations</SectionTitle>
+          <MiniTable loading={oL} rows={ops.slice(0,7)} cols={[
+            {k:"ops_number",l:"Ops #",r:r=><code style={{fontSize:11,fontWeight:700}}>{r.ops_number||"—"}</code>},
+            {k:"cfr_id",l:"CFR"},
+            {k:"bilty_no",l:"Bilty #"},
+            {k:"stage",l:"Stage",r:r=><STag v={r.stage}/>},
+          ]}/>
+        </Card>
+        <Card>
+          <SectionTitle>Vendor Roster</SectionTitle>
+          <MiniTable loading={vL} rows={vens.slice(0,7)} cols={[
+            {k:"name",l:"Vendor",r:r=><span style={{fontWeight:600}}>{r.name}</span>},
+            {k:"type",l:"Type",r:r=><STag v={r.type}/>},
+            {k:"phone",l:"Phone"},
+            {k:"rating",l:"Rating",r:r=><span title={`${r.rating||0}/5`}>{"⭐".repeat(Math.min(5,r.rating||0))}</span>},
+            {k:"status",l:"Status",r:r=><STag v={r.status}/>},
+          ]}/>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+//  5. FINANCE EXECUTIVE DASHBOARD
+// ──────────────────────────────────────────────────────────────────────────────
+function FinanceDash() {
+  const { user } = useAppAuth();
+  const { items:invs, loading:iL } = useCollection("invoices", { sort:"-created", perPage:300 });
+  const { items:cfrs, loading:cL } = useCollection("cfr",      { sort:"-created", perPage:300 });
+
+  const totalRev    = cfrs.reduce((s,c)=>s+(c.grand_total||0),0);
+  const collected   = cfrs.reduce((s,c)=>s+(c.total_paid||0),0);
+  const outstanding = invs.reduce((s,i)=>s+(i.outstanding||0),0);
+  const overdue     = invs.filter(i=>i.status==="overdue").length;
+  const paid        = invs.filter(i=>i.status==="paid").length;
+  const partial     = invs.filter(i=>i.status==="partial").length;
+  const invColors   = { draft:"#94A3B8",sent:"#2563EB",partial:"#D97706",paid:"#059669",overdue:"#DC2626",cancelled:"#94A3B8" };
+
+  return (
+    <div className="page-fade">
+      <GreetBanner name={user?.name} role={user?.role} branch={user?.branch}
+        sub="Track revenue, collections, outstanding, and invoice health across all bookings."/>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:16}}>
+        <KpiCard label="Gross Revenue"    value={cL?"—":fmt(totalRev)}    sub="all CFRs"  color="#059669" loading={cL} icon={I.revenue("#059669")}/>
+        <KpiCard label="Cash Collected"   value={cL?"—":fmt(collected)}   sub="received"  color="#2563EB" loading={cL} icon={I.payout("#2563EB")}/>
+        <KpiCard label="Outstanding"      value={iL?"—":fmt(outstanding)} sub="pending"   color="#DB2648" loading={iL} icon={I.invoice("#DB2648")}/>
+        <KpiCard label="Overdue Invoices" value={iL?"—":overdue}          sub="action needed" color="#DC2626" loading={iL} icon={I.pending("#DC2626")}/>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,marginBottom:24}}>
+        <KpiCard label="Total Invoices" value={iL?"—":invs.length}  sub="raised"   color="#7C3AED" loading={iL} icon={I.invoice("#7C3AED")}/>
+        <KpiCard label="Fully Paid"     value={iL?"—":paid}         sub="cleared"  color="#059669" loading={iL} icon={I.trend("#059669")}/>
+        <KpiCard label="Partial Paid"   value={iL?"—":partial}      sub="follow up" color="#D97706" loading={iL} icon={I.job("#D97706")}/>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1.5fr",gap:16}}>
+        <Card>
+          <SectionTitle>Invoice Status Breakdown</SectionTitle>
+          {iL ? <div style={{height:150,display:"flex",alignItems:"center",justifyContent:"center",color:"#E2E8F0"}}>Loading…</div>
+              : <Pipeline stages={["draft","sent","partial","paid","overdue","cancelled"]} data={invs.map(i=>({...i,stage:i.status}))} colorMap={invColors}/>}
+        </Card>
+        <Card>
+          <SectionTitle>Invoices Needing Action</SectionTitle>
+          <MiniTable loading={iL} rows={invs.filter(i=>["overdue","partial","sent"].includes(i.status)).slice(0,8)} cols={[
+            {k:"inv_number",l:"Invoice #",r:r=><code style={{fontSize:11,fontWeight:700}}>{r.inv_number||"—"}</code>},
+            {k:"grand_total",l:"Amount",r:r=>`₹${(r.grand_total||0).toLocaleString("en-IN")}`},
+            {k:"outstanding",l:"Outstanding",r:r=><strong style={{color:(r.outstanding||0)>0?"#DC2626":"#059669"}}>₹{(r.outstanding||0).toLocaleString("en-IN")}</strong>},
+            {k:"due_date",l:"Due Date"},
+            {k:"status",l:"Status",r:r=><STag v={r.status}/>},
+          ]}/>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+//  6. SURVEYOR DASHBOARD
+// ──────────────────────────────────────────────────────────────────────────────
+function SurveyorDash() {
+  const { user } = useAppAuth();
+  const { items:surveys, loading:sL } = useCollection("surveys",   { sort:"-created", perPage:200 });
+  const { items:enqs,   loading:eL  } = useCollection("enquiries", { sort:"-created", perPage:200 });
+
+  const pending   = surveys.filter(s=>s.status==="pending"||s.status==="assigned").length;
+  const scheduled = surveys.filter(s=>s.status==="scheduled").length;
+  const completed = surveys.filter(s=>s.status==="completed"||s.status==="report-filed").length;
+  const svColors  = { pending:"#D97706",assigned:"#2563EB",scheduled:"#7C3AED","in-progress":"#0D9488",completed:"#059669","report-filed":"#059669" };
+
+  return (
+    <div className="page-fade">
+      <GreetBanner name={user?.name} role={user?.role} branch={user?.branch}
+        sub="Your survey assignments, completion rate, and upcoming visits."/>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:24}}>
+        <KpiCard label="Total Surveys"    value={sL?"—":surveys.length} sub="assigned"   color="#2563EB" loading={sL} icon={I.survey("#2563EB")}/>
+        <KpiCard label="Pending / Assigned" value={sL?"—":pending}     sub="to visit"    color="#D97706" loading={sL} icon={I.pending("#D97706")}/>
+        <KpiCard label="Scheduled"        value={sL?"—":scheduled}     sub="upcoming"    color="#7C3AED" loading={sL} icon={I.job("#7C3AED")}/>
+        <KpiCard label="Completed"        value={sL?"—":completed}     sub="done"        color="#059669" loading={sL} icon={I.trend("#059669")}/>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1.4fr",gap:16,marginBottom:16}}>
+        <Card>
+          <SectionTitle>Survey Pipeline</SectionTitle>
+          {sL ? <div style={{height:150,display:"flex",alignItems:"center",justifyContent:"center",color:"#E2E8F0"}}>Loading…</div>
+              : <Pipeline stages={["pending","assigned","scheduled","in-progress","completed","report-filed"]} data={surveys} colorMap={svColors}/>}
+        </Card>
+        <Card>
+          <SectionTitle>Upcoming Surveys</SectionTitle>
+          <MiniTable loading={sL} rows={surveys.filter(s=>["pending","assigned","scheduled"].includes(s.status)).slice(0,7)} cols={[
+            {k:"survey_number",l:"Survey #",r:r=><code style={{fontSize:11,fontWeight:700}}>{r.survey_number||"—"}</code>},
+            {k:"enquiry_id",l:"Enquiry"},
+            {k:"survey_date",l:"Date"},
+            {k:"survey_time",l:"Time"},
+            {k:"status",l:"Status",r:r=><STag v={r.status}/>},
+          ]}/>
+        </Card>
+      </div>
+
+      <Card>
+        <SectionTitle>Recent Enquiries in Survey Stage</SectionTitle>
+        <MiniTable loading={eL} rows={enqs.filter(e=>e.stage==="survey").slice(0,8)} cols={[
+          {k:"enq_number",l:"Ref #",r:r=><code style={{fontSize:11,fontWeight:700}}>{r.enq_number||"—"}</code>},
+          {k:"name",l:"Customer",r:r=><span style={{fontWeight:600}}>{r.name}</span>},
+          {k:"phone",l:"Phone"},
+          {k:"from_address",l:"From",r:r=><span style={{maxWidth:160,display:"block",overflow:"hidden",textOverflow:"ellipsis"}}>{r.from_address}</span>},
+          {k:"to_address",l:"To",r:r=><span style={{maxWidth:160,display:"block",overflow:"hidden",textOverflow:"ellipsis"}}>{r.to_address}</span>},
+          {k:"move_type",l:"Type",r:r=><STag v={r.move_type}/>},
+        ]}/>
+      </Card>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+//  7. VENDOR DASHBOARD (vehicle + manpower)
+// ──────────────────────────────────────────────────────────────────────────────
+function VendorDash() {
+  const { user } = useAppAuth();
+  const isVehicle = user?.role === "vehicle_vendor";
+
+  // Find this vendor's own record by email match
+  const { items:myVendor, loading:vL } = useCollection("vendors", {
+    filter: `email="${user?.email||"__none__"}"`,
+    perPage: 1
+  });
+  const vendor = myVendor[0];
+
+  const { items:cfrs, loading:cL } = useCollection("cfr", {
+    sort:"-created", perPage:200,
+    filter: isVehicle
+      ? `vehicle_vendor_id="${vendor?.id||"__none__"}"`
+      : `manpower_vendor_id="${vendor?.id||"__none__"}"`,
+    enabled: !!vendor
+  });
+  const { items:ops, loading:oL } = useCollection("operations", { sort:"-created", perPage:200 });
+
+  const myOps     = ops.filter(o => cfrs.some(c=>c.id===o.cfr_id));
+  const active    = cfrs.filter(c=>!["delivered","cancelled"].includes(c.status)).length;
+  const completed = cfrs.filter(c=>c.status==="delivered").length;
+  const earnings  = cfrs.filter(c=>c.status==="delivered").reduce((s,c)=>s+(c.total_paid||0),0);
+  const pending   = vendor?.pending_payout || 0;
+  const opColors  = { "dispatch-mat":"#D97706",packing:"#7C3AED",loading:"#2563EB","in-transit":"#DB2648",unloading:"#0D9488",delivered:"#059669" };
+
+  return (
+    <div className="page-fade">
+      <GreetBanner name={user?.name} role={user?.role} branch={user?.branch}
+        sub={`Welcome back, ${vendor?.name||"Partner"}. Your jobs, earnings and performance.`}/>
+
+      {/* Vendor profile card */}
+      {!vL && vendor && (
+        <Card style={{marginBottom:20,display:"flex",alignItems:"center",gap:20,flexWrap:"wrap"}}>
+          <div style={{width:56,height:56,borderRadius:14,background:"rgba(219,38,72,.1)",border:"1.5px solid rgba(219,38,72,.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:26}}>
+            {isVehicle ? "🚛" : "👷"}
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:"'Poppins',sans-serif",fontSize:16,fontWeight:700,color:"#0F172A"}}>{vendor.name}</div>
+            <div style={{fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"#64748B",marginTop:2}}>{vendor.email} · {vendor.phone}</div>
+            <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
+              <STag v={vendor.type}/>
+              <STag v={vendor.status}/>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#D97706"}}>{"⭐".repeat(Math.min(5,vendor.rating||0))} {vendor.rating}/5</span>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#64748B"}}>{vendor.branch} branch</span>
+            </div>
+          </div>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontFamily:"'Poppins',sans-serif",fontSize:22,fontWeight:800,color:"#059669"}}>{vendor.total_jobs||0}</div>
+            <div style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#64748B"}}>Total jobs done</div>
+          </div>
+        </Card>
+      )}
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:24}}>
+        <KpiCard label="Assigned Jobs"    value={cL?"—":cfrs.length}  sub="total"      color="#2563EB" loading={cL} icon={I.job("#2563EB")}/>
+        <KpiCard label="Active Jobs"      value={cL?"—":active}       sub="ongoing"    color="#D97706" loading={cL} icon={I.pending("#D97706")}/>
+        <KpiCard label="Completed"        value={cL?"—":completed}    sub="delivered"  color="#059669" loading={cL} icon={I.trend("#059669")}/>
+        <KpiCard label="Pending Payout"   value={vL?"—":fmt(pending)} sub="to receive" color="#7C3AED" loading={vL} icon={I.payout("#7C3AED")}/>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1.3fr",gap:16,marginBottom:16}}>
+        <Card>
+          <SectionTitle>Job Stage Breakdown</SectionTitle>
+          {oL ? <div style={{height:140,display:"flex",alignItems:"center",justifyContent:"center",color:"#E2E8F0"}}>Loading…</div>
+              : <Pipeline stages={["dispatch-mat","packing","loading","in-transit","unloading","delivered"]} data={myOps} colorMap={opColors}/>}
+        </Card>
+        <Card>
+          <SectionTitle>My Active Jobs</SectionTitle>
+          <MiniTable loading={cL} rows={cfrs.filter(c=>!["delivered","cancelled"].includes(c.status)).slice(0,6)} cols={[
+            {k:"cfr_number",l:"CFR #",r:r=><code style={{fontSize:11,fontWeight:700}}>{r.cfr_number||"—"}</code>},
+            {k:"move_date",l:"Move Date"},
+            {k:"vehicle",l:isVehicle?"Vehicle":"Crew"},
+            {k:"vehicle_no",l:"Reg No"},
+            {k:"status",l:"Status",r:r=><STag v={r.status}/>},
+          ]}/>
+        </Card>
+      </div>
+
+      <Card>
+        <SectionTitle>Recent Job History</SectionTitle>
+        <MiniTable loading={cL} rows={cfrs.slice(0,8)} cols={[
+          {k:"cfr_number",l:"CFR #",r:r=><code style={{fontSize:11,fontWeight:700}}>{r.cfr_number||"—"}</code>},
+          {k:"move_date",l:"Date"},
+          {k:"grand_total",l:"Job Value",r:r=>`₹${(r.grand_total||0).toLocaleString("en-IN")}`},
+          {k:"total_paid",l:"Received",r:r=>`₹${(r.total_paid||0).toLocaleString("en-IN")}`},
+          {k:"status",l:"Status",r:r=><STag v={r.status}/>},
+        ]}/>
+      </Card>
+    </div>
+  );
+}
+
 function EnquiriesPage(){
   const {user}=useAppAuth();
   const [show,setShow]=useState(false);
