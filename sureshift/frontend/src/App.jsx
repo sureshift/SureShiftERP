@@ -66,103 +66,81 @@ function Splash() {
 }
 
 // ── Login ─────────────────────────────────────────────────────────────────────
-// ── Login ─────────────────────────────────────────────────────────────────────
 const INIT_SF = { name:"", email:"", phone:"", company:"", partnerType:"" };
 
 function Login() {
   const { login, error } = useAppAuth();
-  const [tab, setTab]         = useState("login");
+  const [tab, setTab]         = useState("login"); // login | signup | forgot | reset
   const [showPwd, setShowPwd] = useState(false);
   const [busy, setBusy]       = useState(false);
-  const [ff, setFf]            = useState(null); // focused field
-  const ic = f => ff === f ? "#DB2648" : "#CBD5E1"; // icon color helper
+  const [ff, setFf]           = useState(null);
+  const ic = f => ff === f ? "#DB2648" : "#CBD5E1";
   const [msg, setMsg]         = useState(null); // {type:"error"|"success", text}
-  const [quoteIdx, setQuoteIdx]= useState(0);
   const [remember, setRemember]= useState(false);
+  const [quoteIdx, setQuoteIdx]= useState(0);
   const [lf, setLf] = useState({ email:"", password:"" });
   const [sf, setSf] = useState(INIT_SF);
+  const [fgEmail, setFgEmail] = useState("");        // forgot password
+  const [rtData, setRtData]   = useState({ password:"", confirm:"" }); // reset
+  const [rtToken, setRtToken] = useState("");
+  const [showRt, setShowRt]   = useState(false);
+  const [showRtC, setShowRtC] = useState(false);
 
+  // Detect ?view=reset&token=xxx in URL on mount
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("view") === "reset" && p.get("token")) {
+      setRtToken(p.get("token"));
+      setTab("reset");
+      // Clean URL without reload
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
+  // Rotate quotes every 5s
   const QUOTES = [
     { q:"You are not just moving boxes — you are moving lives, memories and new beginnings.", by:"Founding Team, Sure Shift" },
     { q:"Every route planned, every item packed safely, every customer smile — that's your achievement.", by:"Operations Leadership" },
     { q:"Our strength isn't our trucks or warehouses. It's each one of you showing up every single day.", by:"HR & People Team" },
     { q:"The best partners don't just deliver goods. They deliver trust. Thank you for being ours.", by:"Vendor Relations" },
   ];
-
   useEffect(() => {
     const t = setInterval(() => setQuoteIdx(i => (i + 1) % QUOTES.length), 5000);
     return () => clearInterval(t);
   }, []);
 
-  /* ── flaticon-style SVG icons ── */
-  const IcoMove = () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-    </svg>
-  );
-  const IcoPartner = () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-    </svg>
-  );
-  const IcoStar = () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-    </svg>
-  );
-  const IcoClock = () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-    </svg>
-  );
-  const IcoEyeOn = ({s=17}) => (
-    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-    </svg>
-  );
-  const IcoEyeOff = ({s=17}) => (
-    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/>
-    </svg>
-  );
-  const IcoCheck = () => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#065F46" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/>
-    </svg>
-  );
-  const IcoWarn = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-    </svg>
-  );
-  const IcoShield = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-    </svg>
-  );
-  const IcoWave = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#DB2648" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c.5 2.74.08 5.56-.87 8.3M4.91 2.85c1.94 4.96 2.95 8.05 2.95 11.05M.5 7.09C1.53 9.53 1.78 11.5 1.78 14"/><path d="M12 2l.01 0"/>
-    </svg>
-  );
+  /* SVG icon helpers */
+  const IcoMove    = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
+  const IcoHeart   = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>;
+  const IcoStar    = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
+  const IcoClock   = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+  const IcoEyeOn   = ({s=17}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
+  const IcoEyeOff  = ({s=17}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>;
+  const IcoCheck   = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#065F46" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>;
+  const IcoWarn    = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+  const IcoShield  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+  const IcoBack    = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>;
+  const IcoMail    = () => <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#DB2648" strokeWidth="1.5" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>;
+  const IcoLock    = () => <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>;
 
   const STATS = [
     { n:"10,000+", l:"Moves Completed",    Icon:IcoMove },
-    { n:"500+",    l:"Trusted Partners",   Icon:IcoPartner },
+    { n:"500+",    l:"Trusted Partners",   Icon:IcoHeart },
     { n:"98%",     l:"Satisfaction Rate",  Icon:IcoStar },
     { n:"24 / 7",  l:"Operations Support", Icon:IcoClock },
   ];
 
   const PARTNER_TYPES = [
-    { v:"vehicle",   l:"Vehicle Partner",   Icon:() => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
-    { v:"manpower",  l:"Manpower Partner",  Icon:() => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> },
-    { v:"material",  l:"Material Partner",  Icon:() => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg> },
-    { v:"business",  l:"Business Partner",  Icon:() => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg> },
+    { v:"vehicle",  l:"Vehicle Partner",  Icon:()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
+    { v:"manpower", l:"Manpower Partner", Icon:()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> },
+    { v:"material", l:"Material Partner", Icon:()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg> },
+    { v:"business", l:"Business Partner", Icon:()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg> },
   ];
 
+  /* Handlers */
   const handleLogin = async (e) => {
     e?.preventDefault();
-    if (!lf.email || !lf.password) { setMsg({type:"error",text:"Please enter your email and password to continue."}); return; }
+    if (!lf.email || !lf.password) { setMsg({type:"error",text:"Please enter your email and password."}); return; }
     setBusy(true); setMsg(null);
     try { await login(lf.email.trim().toLowerCase(), lf.password); }
     catch (err) { setMsg({type:"error",text:err.message}); }
@@ -173,25 +151,57 @@ function Login() {
     e?.preventDefault();
     const { name, email, phone, company, partnerType } = sf;
     if (!name || !email || !phone || !company || !partnerType) {
-      setMsg({type:"error",text:"All fields are required to complete your registration."}); return;
+      setMsg({type:"error",text:"All fields are required to complete registration."}); return;
     }
     setBusy(true); setMsg(null);
     try {
       await pb.collection("partner_requests").create({
-        name, email: email.trim().toLowerCase(), phone, company,
-        partner_type: partnerType, status: "pending",
-        submitted_at: new Date().toISOString(),
+        name, email:email.trim().toLowerCase(), phone, company,
+        partner_type:partnerType, status:"pending",
+        submitted_at:new Date().toISOString(),
       });
       setSf(INIT_SF);
-      setMsg({type:"success",text:"Registration submitted successfully! Your account will be activated within 24 hours. We will send your credentials to " + email + "."});
+      setMsg({type:"success",text:`Registration submitted! Your account will be activated within 24 hours. We'll send credentials to ${email}.`});
     } catch (err) {
-      const errMsg = err?.response?.data?.email?.message || err.message || "Submission failed. Please try again.";
-      setMsg({type:"error",text:errMsg});
+      setMsg({type:"error",text:err?.response?.data?.email?.message||err.message||"Submission failed."});
     } finally { setBusy(false); }
   };
 
-  const hr = new Date().getHours();
-  const greeting = hr < 12 ? "morning" : hr < 17 ? "afternoon" : "evening";
+  const handleForgot = async (e) => {
+    e?.preventDefault();
+    if (!fgEmail) { setMsg({type:"error",text:"Please enter your email address."}); return; }
+    setBusy(true); setMsg(null);
+    try {
+      await pb.collection("users").requestPasswordReset(fgEmail.trim().toLowerCase());
+      setMsg({type:"success",text:`Reset link sent to ${fgEmail}. Check your inbox — it expires in 30 minutes.`});
+      setFgEmail("");
+    } catch (err) {
+      // Always show success to prevent email enumeration
+      setMsg({type:"success",text:`If ${fgEmail} is registered, you'll receive a reset link shortly.`});
+    } finally { setBusy(false); }
+  };
+
+  const handleReset = async (e) => {
+    e?.preventDefault();
+    if (!rtData.password || !rtData.confirm) { setMsg({type:"error",text:"Please fill in both password fields."}); return; }
+    if (rtData.password.length < 8) { setMsg({type:"error",text:"Password must be at least 8 characters."}); return; }
+    if (rtData.password !== rtData.confirm) { setMsg({type:"error",text:"Passwords do not match."}); return; }
+    if (!rtToken) { setMsg({type:"error",text:"Invalid or expired reset link. Please request a new one."}); return; }
+    setBusy(true); setMsg(null);
+    try {
+      await pb.collection("users").confirmPasswordReset(rtToken, rtData.password, rtData.confirm);
+      setMsg({type:"success",text:"Password reset successfully! You can now sign in with your new password."});
+      setRtToken("");
+      setRtData({password:"",confirm:""});
+      setTimeout(() => { setTab("login"); setMsg(null); }, 3000);
+    } catch (err) {
+      setMsg({type:"error",text:"This reset link is invalid or has expired. Please request a new one."});
+    } finally { setBusy(false); }
+  };
+
+  const h = new Date().getHours();
+  const greeting = h<12?"morning":h<17?"afternoon":"evening";
+  const isSuccess = msg?.type === "success";
 
   return (
     <div style={{minHeight:"100vh",background:"#F0F2F5",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",fontFamily:"'Inter',sans-serif"}}>
@@ -202,6 +212,7 @@ function Login() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes quoteIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulseDot{0%,100%{opacity:.5}50%{opacity:1}}
+        @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
         .aw{display:grid;grid-template-columns:1.05fr 1fr;width:100%;max-width:1040px;min-height:640px;border-radius:22px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.18)}
         .al{background:#DB2648;padding:50px 44px;display:flex;flex-direction:column;position:relative;overflow:hidden}
         .al::before{content:"";position:absolute;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none}
@@ -217,13 +228,11 @@ function Login() {
         .inp{width:100%;padding:11px 14px;border:1.5px solid #E2E8F0;border-radius:9px;font:400 13.5px 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff;transition:border-color .18s,box-shadow .18s;box-sizing:border-box}
         .inp:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
         .inp::placeholder{color:#CBD5E1}
-        .inp.bad{border-color:#FCA5A5}
         .pw{position:relative}.pw .inp{padding-right:44px}
         .eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94A3B8;display:flex;padding:3px;border-radius:5px;transition:color .15s}
         .eye:hover{color:#475569}
         .sel{appearance:none;width:100%;padding:11px 38px 11px 14px;border:1.5px solid #E2E8F0;border-radius:9px;font:400 13.5px 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.7'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E") no-repeat right 13px center;cursor:pointer;transition:border-color .18s;box-sizing:border-box}
         .sel:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
-        .sel.ph{color:#CBD5E1}
         .abtn{width:100%;padding:13px;background:#DB2648;color:#fff;border:none;border-radius:10px;font:600 14px 'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:all .18s;letter-spacing:.15px}
         .abtn:hover{background:#B91C3C;transform:translateY(-1px)}
         .abtn:active{transform:translateY(0)}
@@ -245,23 +254,23 @@ function Login() {
         .chk input{accent-color:#DB2648;width:15px;height:15px;cursor:pointer}
         .bn{text-align:center;font:400 12.5px 'Inter',sans-serif;color:#94A3B8;margin-top:16px}
         .fs{animation:fadeUp .18s ease}
-        .notify{border-radius:10px;padding:12px 14px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;line-height:1.5}
+        .notify{border-radius:10px;padding:12px 14px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;line-height:1.5;font:400 13px 'Inter',sans-serif}
         .notify.ok{background:#F0FDF4;border:1px solid #A7F3D0;color:#065F46}
         .notify.er{background:#FFF5F5;border:1px solid #FECACA;color:#991B1B}
         .pt-opt{display:flex;align-items:center;gap:8px;padding:10px 13px;border:1.5px solid #E2E8F0;border-radius:9px;cursor:pointer;transition:all .15s;font:400 13.5px 'Inter',sans-serif;color:#374151}
         .pt-opt.sel2{border-color:#DB2648;background:rgba(219,38,72,.04);color:#DB2648;font-weight:600}
         .pt-opt:hover:not(.sel2){border-color:#CBD5E1;background:#FAFAFA}
         .trust-bar{display:flex;align-items:center;gap:8px;padding:11px 14px;background:#F8FAFC;border-radius:9px;border:1px solid #F1F5F9;margin-top:20px}
-        @media(max-width:900px){.aw{grid-template-columns:1fr;max-width:480px}.al{padding:28px 24px;min-height:auto}.adp-hide{display:none}.ari,.tabs-bar{padding-left:28px;padding-right:28px}.g2{grid-template-columns:1fr}}
+        .pg-icon{width:68px;height:68px;border-radius:18px;background:rgba(219,38,72,.08);border:1.5px solid rgba(219,38,72,.15);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;animation:scaleIn .3s ease}
+        .pw-strength{height:3px;border-radius:2px;margin-top:6px;transition:all .3s}
+        @media(max-width:900px){.aw{grid-template-columns:1fr;max-width:480px}.al{padding:28px 24px;min-height:auto}.ari,.tabs-bar{padding-left:28px;padding-right:28px}.g2{grid-template-columns:1fr}}
         @media(max-width:520px){.ari,.tabs-bar{padding-left:18px;padding-right:18px}.al{padding:22px 18px}}
       `}</style>
 
       <div className="aw">
-
         {/* ══ LEFT PANEL ══ */}
         <div className="al">
           <div className="adp"/>
-
           {/* Logo */}
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:36,position:"relative",zIndex:1}}>
             <div style={{width:42,height:42,borderRadius:12,background:"rgba(255,255,255,.2)",border:"1.5px solid rgba(255,255,255,.35)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
@@ -276,7 +285,6 @@ function Login() {
               <span style={{fontFamily:"'Inter',sans-serif",fontSize:10.5,color:"rgba(255,255,255,.8)",fontWeight:600}}>All systems live</span>
             </div>
           </div>
-
           {/* Headline */}
           <div style={{position:"relative",zIndex:1,marginBottom:28}}>
             <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"4px 12px",background:"rgba(255,255,255,.15)",border:"1px solid rgba(255,255,255,.25)",borderRadius:99,marginBottom:14}}>
@@ -288,9 +296,8 @@ function Login() {
             </h1>
             <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"rgba(255,255,255,.65)",lineHeight:1.7}}>Your command centre for enquiries, surveys, quotations, operations and invoices.</p>
           </div>
-
-          {/* Stats grid — icons + number + label centered */}
-          <div className="g2 adp-hide" style={{marginBottom:26,position:"relative",zIndex:1}}>
+          {/* Stats */}
+          <div className="g2" style={{marginBottom:26,position:"relative",zIndex:1}}>
             {STATS.map(({n,l,Icon})=>(
               <div key={l} className="sc">
                 <div className="sico"><Icon/></div>
@@ -299,18 +306,12 @@ function Login() {
               </div>
             ))}
           </div>
-
           {/* Rotating quote */}
           <div className="qbox" style={{position:"relative",zIndex:1}}>
             <div className="qt" key={quoteIdx}>"{QUOTES[quoteIdx].q}"</div>
             <div className="qby">— {QUOTES[quoteIdx].by}</div>
-            <div className="dnav">
-              {QUOTES.map((_,i)=>(
-                <div key={i} className={`dd${quoteIdx===i?" on":""}`} onClick={()=>setQuoteIdx(i)}/>
-              ))}
-            </div>
+            <div className="dnav">{QUOTES.map((_,i)=><div key={i} className={`dd${quoteIdx===i?" on":""}`} onClick={()=>setQuoteIdx(i)}/>)}</div>
           </div>
-
           {/* Footer */}
           <div style={{paddingTop:22,marginTop:12,borderTop:"1px solid rgba(255,255,255,.15)",fontFamily:"'Inter',sans-serif",fontSize:10.5,color:"rgba(255,255,255,.4)",display:"flex",justifyContent:"space-between",position:"relative",zIndex:1}}>
             <span>© 2026 Sure Shift Relocation Services Pvt. Ltd.</span>
@@ -320,23 +321,24 @@ function Login() {
 
         {/* ══ RIGHT PANEL ══ */}
         <div className="ar">
-          <div className="tabs-bar">
-            {[{id:"login",l:"Employee Login"},{id:"signup",l:"Partner Sign Up"}].map(t=>(
-              <button key={t.id} className={`tab-btn${tab===t.id?" on":""}`}
-                onClick={()=>{setTab(t.id);setMsg(null);}}>
-                {t.l}
-              </button>
-            ))}
-          </div>
+          {/* Tabs — only show for login/signup */}
+          {(tab==="login"||tab==="signup") && (
+            <div className="tabs-bar">
+              {[{id:"login",l:"Employee Login"},{id:"signup",l:"Partner Sign Up"}].map(t=>(
+                <button key={t.id} className={`tab-btn${tab===t.id?" on":""}`}
+                  onClick={()=>{setTab(t.id);setMsg(null);}}>
+                  {t.l}
+                </button>
+              ))}
+            </div>
+          )}
 
-          <div className="ari">
-            {/* Notification banner */}
+          <div className="ari" style={{justifyContent:tab==="forgot"||tab==="reset"?"center":"center"}}>
+            {/* Notification */}
             {msg && (
-              <div className={`notify${msg.type==="success"?" ok":" er"}`}>
-                <span style={{flexShrink:0,marginTop:1}}>
-                  {msg.type==="success" ? <IcoCheck/> : <IcoWarn/>}
-                </span>
-                <span style={{fontFamily:"'Inter',sans-serif",fontSize:13}}>{msg.text}</span>
+              <div className={`notify${isSuccess?" ok":" er"}`}>
+                <span style={{flexShrink:0,marginTop:1}}>{isSuccess?<IcoCheck/>:<IcoWarn/>}</span>
+                <span>{msg.text}</span>
               </div>
             )}
 
@@ -346,13 +348,10 @@ function Login() {
                 <div style={{marginBottom:24}}>
                   <h2 style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:22,color:"#0F172A",marginBottom:5,display:"flex",alignItems:"center",gap:9}}>
                     Good {greeting}
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#DB2648" strokeWidth="1.8" strokeLinecap="round">
-                      <path d="M18 11V6a2 2 0 00-2-2v0a2 2 0 00-2 2v0M14 10V4a2 2 0 00-2-2v0a2 2 0 00-2 2v2M10 10.5V6a2 2 0 00-2-2v0a2 2 0 00-2 2v8a6 6 0 006 6h2a6 6 0 006-6v-2a2 2 0 00-2-2v0a2 2 0 00-2 2v0"/>
-                    </svg>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#DB2648" strokeWidth="1.8" strokeLinecap="round"><path d="M18 11V6a2 2 0 00-2-2v0a2 2 0 00-2 2v0M14 10V4a2 2 0 00-2-2v0a2 2 0 00-2 2v2M10 10.5V6a2 2 0 00-2-2v0a2 2 0 00-2 2v8a6 6 0 006 6h2a6 6 0 006-6v-2a2 2 0 00-2-2v0a2 2 0 00-2 2v0"/></svg>
                   </h2>
-                  <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#64748B",lineHeight:1.55}}>Sign in to your Sure Shift ERP workspace and get things moving.</p>
+                  <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#64748B",lineHeight:1.55}}>Sign in to your Sure Shift ERP workspace.</p>
                 </div>
-
                 <form onSubmit={handleLogin}>
                   <div style={{marginBottom:14}}>
                     <label className="lbl">Email address</label>
@@ -365,7 +364,6 @@ function Login() {
                       <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ic("l-email")} strokeWidth="1.8" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     </div>
                   </div>
-
                   <div style={{marginBottom:4}}>
                     <label className="lbl">Password</label>
                     <div className="pw">
@@ -375,40 +373,119 @@ function Login() {
                         onKeyDown={e=>e.key==="Enter"&&handleLogin(e)}
                         style={{paddingLeft:38}}/>
                       <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ic("l-pwd")} strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                      <button type="button" className="eye" onClick={()=>setShowPwd(v=>!v)}>
-                        {showPwd ? <IcoEyeOff/> : <IcoEyeOn/>}
-                      </button>
+                      <button type="button" className="eye" onClick={()=>setShowPwd(v=>!v)}>{showPwd?<IcoEyeOff/>:<IcoEyeOn/>}</button>
                     </div>
                   </div>
-
                   <div className="remrow">
-                    <label className="chk">
-                      <input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}/>
-                      Keep me signed in
-                    </label>
-                    <button type="button" className="alink" style={{fontSize:12.5}}>Forgot password?</button>
+                    <label className="chk"><input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}/> Keep me signed in</label>
+                    <button type="button" className="alink" style={{fontSize:12.5}} onClick={()=>{setTab("forgot");setMsg(null);}}>Forgot password?</button>
                   </div>
-
                   <button type="submit" className="abtn" disabled={busy}>
-                    {busy
-                      ? <><div style={{width:16,height:16,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .7s linear infinite"}}/> Signing in…</>
-                      : <>
-                          Sign in to ERP
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                        </>
-                    }
+                    {busy?<><div style={{width:16,height:16,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .7s linear infinite"}}/> Signing in…</>:
+                    <>Sign in to ERP <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></>}
                   </button>
                 </form>
+                <div className="trust-bar"><IcoShield/><span style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#059669",fontWeight:600}}>Secured with Bank Grade Security Systems</span></div>
+                <p className="bn">A vendor or partner? <button className="alink" onClick={()=>{setTab("signup");setMsg(null);}}>Sign up here</button></p>
+              </div>
+            )}
 
-                <div className="trust-bar">
-                  <IcoShield/>
-                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#059669",fontWeight:600}}>Secured with Bank Grade Security Systems</span>
+            {/* ── FORGOT PASSWORD ── */}
+            {tab==="forgot" && (
+              <div className="fs" style={{maxWidth:360,margin:"0 auto",width:"100%"}}>
+                <div className="pg-icon"><IcoMail/></div>
+                <div style={{textAlign:"center",marginBottom:24}}>
+                  <h2 style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:21,color:"#0F172A",marginBottom:8}}>Forgot Password?</h2>
+                  <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#64748B",lineHeight:1.65}}>No worries. Enter your registered email and we'll send you a reset link immediately.</p>
                 </div>
+                <form onSubmit={handleForgot}>
+                  <div style={{marginBottom:20}}>
+                    <label className="lbl">Email address</label>
+                    <div style={{position:"relative"}}>
+                      <input className="inp" type="email" placeholder="you@sureshift.in" value={fgEmail} autoFocus
+                        onChange={e=>{setFgEmail(e.target.value);setMsg(null);}}
+                        onFocus={()=>setFf("fg-email")} onBlur={()=>setFf(null)}
+                        onKeyDown={e=>e.key==="Enter"&&handleForgot(e)}
+                        style={{paddingLeft:38}}/>
+                      <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ic("fg-email")} strokeWidth="1.8" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    </div>
+                  </div>
+                  <button type="submit" className="abtn" disabled={busy}>
+                    {busy?<><div style={{width:16,height:16,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .7s linear infinite"}}/> Sending…</>:
+                    <>Send Reset Link <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></>}
+                  </button>
+                </form>
+                <div style={{marginTop:20,display:"flex",justifyContent:"center"}}>
+                  <button className="alink" style={{display:"flex",alignItems:"center",gap:6,color:"#64748B",fontSize:13}} onClick={()=>{setTab("login");setMsg(null);}}>
+                    <IcoBack/> Back to Sign In
+                  </button>
+                </div>
+                <div style={{marginTop:16,padding:"11px 14px",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:9,display:"flex",gap:8,alignItems:"flex-start"}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#92400E",lineHeight:1.55}}>The reset link expires in <strong>30 minutes</strong>. If you don't see the email, check your spam folder.</span>
+                </div>
+              </div>
+            )}
 
-                <p className="bn">
-                  A vendor or partner?{" "}
-                  <button className="alink" onClick={()=>{setTab("signup");setMsg(null);}}>Sign up here</button>
-                </p>
+            {/* ── RESET PASSWORD ── */}
+            {tab==="reset" && (
+              <div className="fs" style={{maxWidth:360,margin:"0 auto",width:"100%"}}>
+                <div className="pg-icon" style={{background:"rgba(5,150,105,.08)",borderColor:"rgba(5,150,105,.2)"}}><IcoLock/></div>
+                <div style={{textAlign:"center",marginBottom:24}}>
+                  <h2 style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:21,color:"#0F172A",marginBottom:8}}>Set New Password</h2>
+                  <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#64748B",lineHeight:1.65}}>Choose a strong password you haven't used before. Minimum 8 characters.</p>
+                </div>
+                {!rtToken && !msg && (
+                  <div style={{padding:"14px",background:"#FFF5F5",border:"1px solid #FECACA",borderRadius:10,marginBottom:20,fontFamily:"'Inter',sans-serif",fontSize:13,color:"#991B1B",textAlign:"center"}}>
+                    ⚠️ Invalid or expired reset link.<br/>
+                    <button className="alink" style={{marginTop:6}} onClick={()=>{setTab("forgot");setMsg(null);}}>Request a new one →</button>
+                  </div>
+                )}
+                {rtToken && (
+                  <form onSubmit={handleReset}>
+                    <div style={{marginBottom:14}}>
+                      <label className="lbl">New Password</label>
+                      <div className="pw">
+                        <input className="inp" type={showRt?"text":"password"} placeholder="Min 8 characters" value={rtData.password}
+                          onChange={e=>{setRtData({...rtData,password:e.target.value});setMsg(null);}}
+                          onFocus={()=>setFf("rt-pwd")} onBlur={()=>setFf(null)}
+                          autoFocus style={{paddingLeft:38}}/>
+                        <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ic("rt-pwd")} strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        <button type="button" className="eye" onClick={()=>setShowRt(v=>!v)}>{showRt?<IcoEyeOff/>:<IcoEyeOn/>}</button>
+                      </div>
+                      {/* Password strength bar */}
+                      {rtData.password && (
+                        <div className="pw-strength" style={{
+                          background: rtData.password.length<8?"#FCA5A5":rtData.password.length<12?"#FCD34D":"#6EE7B7",
+                          width: rtData.password.length<1?"0%":rtData.password.length<8?"33%":rtData.password.length<12?"66%":"100%"
+                        }}/>
+                      )}
+                    </div>
+                    <div style={{marginBottom:20}}>
+                      <label className="lbl">Confirm New Password</label>
+                      <div className="pw">
+                        <input className="inp" type={showRtC?"text":"password"} placeholder="Repeat password" value={rtData.confirm}
+                          onChange={e=>{setRtData({...rtData,confirm:e.target.value});setMsg(null);}}
+                          onFocus={()=>setFf("rt-cpwd")} onBlur={()=>setFf(null)}
+                          style={{paddingLeft:38,borderColor:rtData.confirm&&rtData.confirm!==rtData.password?"#FCA5A5":""}}/>
+                        <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ic("rt-cpwd")} strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        <button type="button" className="eye" onClick={()=>setShowRtC(v=>!v)}>{showRtC?<IcoEyeOff/>:<IcoEyeOn/>}</button>
+                      </div>
+                      {rtData.confirm && rtData.confirm!==rtData.password && (
+                        <p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:5}}>Passwords do not match</p>
+                      )}
+                    </div>
+                    <button type="submit" className="abtn" disabled={busy||!rtToken}>
+                      {busy?<><div style={{width:16,height:16,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .7s linear infinite"}}/> Resetting…</>:
+                      <>Reset Password <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg></>}
+                    </button>
+                  </form>
+                )}
+                <div style={{marginTop:16,display:"flex",justifyContent:"center"}}>
+                  <button className="alink" style={{display:"flex",alignItems:"center",gap:6,color:"#64748B",fontSize:13}} onClick={()=>{setTab("login");setMsg(null);}}>
+                    <IcoBack/> Back to Sign In
+                  </button>
+                </div>
               </div>
             )}
 
@@ -417,9 +494,8 @@ function Login() {
               <div className="fs">
                 <div style={{marginBottom:20}}>
                   <h2 style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:21,color:"#0F172A",marginBottom:5}}>Join Our Partner Network</h2>
-                  <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"#64748B",lineHeight:1.6}}>Register as a Sure Shift partner. Our team will activate your account within 24 hours.</p>
+                  <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"#64748B",lineHeight:1.6}}>Register as a Sure Shift partner. Our team activates your account within 24 hours.</p>
                 </div>
-
                 <form onSubmit={handleSignup}>
                   <div className="g2" style={{marginBottom:12}}>
                     <div>
@@ -443,7 +519,6 @@ function Login() {
                       </div>
                     </div>
                   </div>
-
                   <div style={{marginBottom:12}}>
                     <label className="lbl">Business email</label>
                     <div style={{position:"relative"}}>
@@ -454,7 +529,6 @@ function Login() {
                       <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ic("s-email")} strokeWidth="1.8" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     </div>
                   </div>
-
                   <div style={{marginBottom:12}}>
                     <label className="lbl">Company / Firm name</label>
                     <div style={{position:"relative"}}>
@@ -465,44 +539,28 @@ function Login() {
                       <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ic("s-company")} strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     </div>
                   </div>
-
-                  {/* Partner type — card selector */}
                   <div style={{marginBottom:18}}>
                     <label className="lbl">Partner type</label>
                     <div className="g2">
                       {PARTNER_TYPES.map(({v,l,Icon})=>(
                         <div key={v} className={`pt-opt${sf.partnerType===v?" sel2":""}`}
                           onClick={()=>{setSf({...sf,partnerType:v});setMsg(null);}}>
-                          <Icon/>
-                          <span style={{fontSize:13}}>{l}</span>
-                          {sf.partnerType===v && (
-                            <svg style={{marginLeft:"auto",flexShrink:0}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DB2648" strokeWidth="2.2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                          )}
+                          <Icon/><span style={{fontSize:13}}>{l}</span>
+                          {sf.partnerType===v&&<svg style={{marginLeft:"auto",flexShrink:0}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DB2648" strokeWidth="2.2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
                         </div>
                       ))}
                     </div>
                   </div>
-
                   <button type="submit" className="abtn" disabled={busy}>
-                    {busy
-                      ? <><div style={{width:16,height:16,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .7s linear infinite"}}/> Submitting…</>
-                      : <>
-                          Submit Registration
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                        </>
-                    }
+                    {busy?<><div style={{width:16,height:16,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .7s linear infinite"}}/> Submitting…</>:
+                    <>Submit Registration <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></>}
                   </button>
                 </form>
-
-                <div style={{marginTop:16,padding:"11px 14px",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:9,display:"flex",gap:9,alignItems:"flex-start"}}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#92400E",lineHeight:1.55}}>Partner accounts are reviewed by our team. You'll receive login credentials by email within 24 hours of approval.</span>
+                <div style={{marginTop:16,padding:"11px 14px",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:9,display:"flex",gap:8,alignItems:"flex-start"}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#92400E",lineHeight:1.55}}>Partner accounts are reviewed by our team. You'll receive credentials by email within 24 hours of approval.</span>
                 </div>
-
-                <p className="bn">
-                  Already have an account?{" "}
-                  <button className="alink" onClick={()=>{setTab("login");setMsg(null);}}>Sign in here</button>
-                </p>
+                <p className="bn">Already have an account? <button className="alink" onClick={()=>{setTab("login");setMsg(null);}}>Sign in here</button></p>
               </div>
             )}
           </div>

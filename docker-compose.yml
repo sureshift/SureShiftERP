@@ -36,7 +36,8 @@ services:
       - PGPASSWORD=${POSTGRES_PASSWORD}
     command: >
       sh -c "
-        psql -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 'CREATE DATABASE postiz_db;' || true &&
+        psql -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 'CREATE DATABASE postiz_db;' 2>/dev/null || true &&
+        psql -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 'CREATE DATABASE freight_users_db;' 2>/dev/null || true &&
         echo 'All databases ready.'
       "
     networks:
@@ -212,6 +213,12 @@ services:
       - PB_SUPER_ADMIN_EMAIL=${PB_SURESHIFT_ADMIN_EMAIL}
       - PB_SUPER_ADMIN_PASS=${PB_SURESHIFT_ADMIN_PASS}
       - PB_ENCRYPTION_KEY=${PB_ENCRYPTION_KEY}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME}
+      - PB_APP_URL=https://${SURESHIFT_ERP_HOST}
     volumes:
       - ./data/pocketbase-sureshift:/pb_data
     networks:
