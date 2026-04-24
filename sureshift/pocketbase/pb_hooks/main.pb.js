@@ -208,3 +208,72 @@ onRecordCreate((e) => {
 routerAdd("GET", "/api/erp/ping", (e) => {
   return e.json(200, { status:"ok", service:"SureShift ERP", version:"2.0.0", time:new Date().toISOString() });
 });
+
+// ── 10. Error alert emails → sureshiftrelocation@gmail.com ──────────────────
+// Called by any hook that catches a critical error.
+function sendErrorAlert(subject, body) {
+  const alertTo = $os.getenv("SMTP_ALERT_TO");
+  if (!alertTo) return;
+  try {
+    const message = new MailerMessage();
+    message.setFrom({
+      address: $os.getenv("SMTP_USER") || "sureshiftmail@gmail.com",
+      name:    $os.getenv("SMTP_FROM_NAME") || "SureShift ERP",
+    });
+    message.addTo({ address: alertTo, name: "SureShift Alerts" });
+    message.setSubject("⚠️ SureShift ERP Alert: " + subject);
+    message.setHTML(`
+      <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#fff;border:1px solid #FECACA;border-radius:10px;overflow:hidden">
+        <div style="background:#DC2626;padding:18px 24px">
+          <span style="font-size:16px;font-weight:700;color:#fff">⚠️ SureShift ERP — System Alert</span>
+        </div>
+        <div style="padding:24px">
+          <h3 style="color:#DC2626;margin:0 0 12px">${subject}</h3>
+          <pre style="background:#FFF5F5;padding:14px;border-radius:6px;font-size:12px;color:#374151;white-space:pre-wrap;word-break:break-all">${body}</pre>
+          <p style="font-size:12px;color:#94A3B8;margin:16px 0 0">Time: ${new Date().toISOString()}<br>Server: erp.sureshift.in</p>
+        </div>
+      </div>
+    `);
+    $app.newMailClient().send(message);
+  } catch (_) {
+    // Silently fail — don't recurse on alert errors
+  }
+}
+
+// ── 11. New partner request alert ────────────────────────────────────────────
+onRecordCreate((e) => {
+  e.next();
+  const alertTo = $os.getenv("SMTP_ALERT_TO");
+  if (!alertTo) return;
+  try {
+    const r = e.record;
+    const message = new MailerMessage();
+    message.setFrom({
+      address: $os.getenv("SMTP_USER") || "sureshiftmail@gmail.com",
+      name:    $os.getenv("SMTP_FROM_NAME") || "SureShift ERP",
+    });
+    message.addTo({ address: alertTo, name: "SureShift Team" });
+    message.setSubject("🤝 New Partner Request: " + r.getString("name"));
+    message.setHTML(`
+      <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:10px;overflow:hidden">
+        <div style="background:#DB2648;padding:18px 24px;display:flex;align-items:center;gap:10px">
+          <span style="font-size:16px;font-weight:700;color:#fff">🤝 New Partner Request</span>
+        </div>
+        <div style="padding:24px">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <tr style="border-bottom:1px solid #F1F5F9"><td style="padding:8px 0;color:#64748B;width:40%">Name</td><td style="padding:8px 0;font-weight:600;color:#0F172A">${r.getString("name")}</td></tr>
+            <tr style="border-bottom:1px solid #F1F5F9"><td style="padding:8px 0;color:#64748B">Email</td><td style="padding:8px 0;font-weight:600;color:#0F172A">${r.getString("email")}</td></tr>
+            <tr style="border-bottom:1px solid #F1F5F9"><td style="padding:8px 0;color:#64748B">Phone</td><td style="padding:8px 0;font-weight:600;color:#0F172A">${r.getString("phone")}</td></tr>
+            <tr style="border-bottom:1px solid #F1F5F9"><td style="padding:8px 0;color:#64748B">Company</td><td style="padding:8px 0;font-weight:600;color:#0F172A">${r.getString("company")}</td></tr>
+            <tr><td style="padding:8px 0;color:#64748B">Partner Type</td><td style="padding:8px 0;font-weight:600;color:#DB2648;text-transform:capitalize">${r.getString("partner_type")}</td></tr>
+          </table>
+          <div style="margin-top:20px;padding:12px;background:#FFF7ED;border:1px solid #FDE68A;border-radius:8px;font-size:12px;color:#92400E">
+            Review and approve this request in the <strong>Sure Shift ERP Admin Panel</strong> → Users → Partner Requests.
+          </div>
+          <p style="font-size:11px;color:#CBD5E1;margin-top:16px">Submitted: ${new Date().toISOString()}</p>
+        </div>
+      </div>
+    `);
+    $app.newMailClient().send(message);
+  } catch (_) {}
+}, "partner_requests");

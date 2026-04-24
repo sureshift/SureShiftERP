@@ -219,6 +219,7 @@ services:
       - SMTP_PASS=${SMTP_PASS}
       - SMTP_FROM_NAME=${SMTP_FROM_NAME}
       - PB_APP_URL=https://${SURESHIFT_ERP_HOST}
+      - SMTP_ALERT_TO=${SMTP_ALERT_TO}
     volumes:
       - ./data/pocketbase-sureshift:/pb_data
     networks:
