@@ -17,19 +17,24 @@ onBootstrap(function(e) {
 
   if (smtpHost && smtpUser && smtpPass) {
     try {
-      var settings = $app.settings();
-      settings.meta.appName       = "SureShift ERP";
-      settings.meta.appUrl        = appUrl;
-      settings.meta.senderName    = fromName;
-      settings.meta.senderAddress = senderAddr;
-      settings.smtp.enabled    = true;
-      settings.smtp.host       = smtpHost;
-      settings.smtp.port       = parseInt($os.getenv("SMTP_PORT") || "587");
-      settings.smtp.username   = smtpUser;
-      settings.smtp.password   = smtpPass;
-      settings.smtp.authMethod = "LOGIN";
-      settings.smtp.tls        = false; // TLS via STARTTLS on 587
-      $app.save(settings);
+      // v0.36: use updateSettings with a plain object
+      $app.updateSettings({
+        meta: {
+          appName:       "SureShift ERP",
+          appUrl:        appUrl,
+          senderName:    fromName,
+          senderAddress: senderAddr
+        },
+        smtp: {
+          enabled:    true,
+          host:       smtpHost,
+          port:       parseInt($os.getenv("SMTP_PORT") || "587"),
+          username:   smtpUser,
+          password:   smtpPass,
+          authMethod: "LOGIN",
+          tls:        false
+        }
+      });
       $app.logger().info("[SureShift] SMTP + App settings configured OK");
     } catch(err) {
       $app.logger().error("[SureShift] Settings failed: " + String(err));
