@@ -2,48 +2,13 @@
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  SureShift ERP — PocketBase Hooks  (v0.36 API)
+//  NOTE: SMTP is configured manually via pb.sureshift.in/_/ dashboard
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── 1. Boot: configure SMTP + App settings + seed admin ──────────────────────
+// ── 1. Seed super admin on first boot ────────────────────────────────────────
 onBootstrap(function(e) {
   e.next();
 
-  var smtpHost = $os.getenv("SMTP_HOST");
-  var smtpUser = $os.getenv("SMTP_USER");
-  var smtpPass = $os.getenv("SMTP_PASS");
-  var appUrl      = $os.getenv("PB_APP_URL") || "https://erp.sureshift.in";
-  var senderAddr  = $os.getenv("SMTP_SENDER") || smtpUser;
-  var fromName = $os.getenv("SMTP_FROM_NAME") || "SureShift ERP";
-
-  if (smtpHost && smtpUser && smtpPass) {
-    try {
-      // v0.36: use updateSettings with a plain object
-      $app.updateSettings({
-        meta: {
-          appName:       "SureShift ERP",
-          appUrl:        appUrl,
-          senderName:    fromName,
-          senderAddress: senderAddr
-        },
-        smtp: {
-          enabled:    true,
-          host:       smtpHost,
-          port:       parseInt($os.getenv("SMTP_PORT") || "587"),
-          username:   smtpUser,
-          password:   smtpPass,
-          authMethod: "LOGIN",
-          tls:        false
-        }
-      });
-      $app.logger().info("[SureShift] SMTP + App settings configured OK");
-    } catch(err) {
-      $app.logger().error("[SureShift] Settings failed: " + String(err));
-    }
-  } else {
-    $app.logger().warn("[SureShift] SMTP env vars missing");
-  }
-
-  // Seed super admin on first boot
   var existing = [];
   try { existing = $app.findRecordsByFilter("users","id != ''","-created",1,0); } catch(_) { return; }
   if (existing.length > 0) return;
@@ -76,12 +41,8 @@ onBootstrap(function(e) {
       settings:["view","edit"]
     });
     $app.save(rec);
-    $app.logger().info("[SureShift] Super admin seeded: " + adminEmail);
-  } catch(err) {
-    $app.logger().error("[SureShift] Admin seed failed: " + String(err));
-  }
+  } catch(_) {}
 
-  // Seed default app_settings
   try {
     var sColl = $app.findCollectionByNameOrId("app_settings");
     var defaults = [
@@ -92,31 +53,26 @@ onBootstrap(function(e) {
     for (var i = 0; i < defaults.length; i++) {
       var d = defaults[i];
       var r = new Record(sColl);
-      r.set("key", d.key);
-      r.set("value", d.value);
-      r.set("category", d.category);
+      r.set("key", d.key); r.set("value", d.value); r.set("category", d.category);
       $app.save(r);
     }
-    $app.logger().info("[SureShift] Default settings seeded");
   } catch(_) {}
 });
 
-// ── 2. Intercept password reset email ─────────────────────────────────────────
+// ── 2. Intercept password reset — send branded email with correct URL ─────────
 onMailerRecordPasswordResetSend(function(e) {
-  var appUrl   = "https://erp.sureshift.in";
   var token    = e.meta["token"] || "";
   var userName = e.record.getString("name") || e.record.getString("email");
-  var resetUrl = appUrl + "?view=reset&token=" + token;
+  var resetUrl = "https://erp.sureshift.in?view=reset&token=" + token;
 
   e.message.setSubject("Reset your SureShift ERP password");
 
   var html = "";
   html += "<!DOCTYPE html><html><body style='margin:0;padding:0;background:#F0F2F5;font-family:Arial,sans-serif'>";
-  html += "<table width='100%' cellpadding='0' cellspacing='0' style='padding:40px 20px'>";
-  html += "<tr><td align='center'>";
+  html += "<table width='100%' cellpadding='0' cellspacing='0' style='padding:40px 20px'><tr><td align='center'>";
   html += "<table width='520' cellpadding='0' cellspacing='0' style='background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)'>";
   html += "<tr><td style='background:#DB2648;padding:28px 36px'>";
-  html += "<span style='font-size:20px;font-weight:800;color:#fff;letter-spacing:1px'>SURESHIFT ERP</span>";
+  html += "<span style='font-size:20px;font-weight:800;color:#fff;letter-spacing:1px'>&#9658; SURESHIFT ERP</span>";
   html += "</td></tr>";
   html += "<tr><td style='padding:36px'>";
   html += "<h2 style='font-size:22px;font-weight:700;color:#0F172A;margin:0 0 16px'>Password Reset Request</h2>";
@@ -125,10 +81,13 @@ onMailerRecordPasswordResetSend(function(e) {
   html += "<div style='text-align:center;margin:0 0 28px'>";
   html += "<a href='" + resetUrl + "' style='display:inline-block;background:#DB2648;color:#fff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px'>Reset My Password</a>";
   html += "</div>";
-  html += "<p style='font-size:12px;color:#94A3B8;margin:0'>If you did not request this, ignore this email. Your password will remain unchanged.</p>";
+  html += "<p style='font-size:12px;color:#94A3B8;margin:0 0 12px'>Or copy this link into your browser:</p>";
+  html += "<p style='font-size:11px;color:#DB2648;word-break:break-all;margin:0'>" + resetUrl + "</p>";
+  html += "<hr style='border:none;border-top:1px solid #E2E8F0;margin:24px 0'>";
+  html += "<p style='font-size:12px;color:#94A3B8;margin:0'>If you did not request this, ignore this email.</p>";
   html += "</td></tr>";
-  html += "<tr><td style='background:#F8FAFC;padding:20px 36px;border-top:1px solid #E2E8F0'>";
-  html += "<p style='font-size:11px;color:#94A3B8;margin:0;text-align:center'>© 2026 Sure Shift Relocation Services Pvt. Ltd.</p>";
+  html += "<tr><td style='background:#F8FAFC;padding:16px 36px;border-top:1px solid #E2E8F0'>";
+  html += "<p style='font-size:11px;color:#94A3B8;margin:0;text-align:center'>&#169; 2026 Sure Shift Relocation Services Pvt. Ltd.</p>";
   html += "</td></tr></table></td></tr></table></body></html>";
 
   e.message.setHTML(html);
@@ -143,7 +102,7 @@ onRecordCreate(function(e) {
   try {
     var r = e.record;
     var msg = new MailerMessage();
-    msg.setFrom({ address: $os.getenv("SMTP_SENDER") || $os.getenv("SMTP_USER") || "noreply@sureshift.in", name: "SureShift ERP" });
+    msg.setFrom({ address: $os.getenv("SMTP_SENDER") || "noreply@sureshift.in", name: "SureShift ERP" });
     msg.addTo({ address: alertTo, name: "SureShift Team" });
     msg.setSubject("New Partner Request: " + r.getString("name"));
     var body = "<div style='font-family:Arial,sans-serif;max-width:480px;margin:0 auto'>";
@@ -167,11 +126,10 @@ onRecordCreate(function(e) {
   var branch = e.record.getString("branch") || "NDLH";
   var fy     = e.record.getString("fy")     || "2627";
   try {
-    var list = $app.findRecordsByFilter("enquiries", "branch='" + branch + "' && fy='" + fy + "'", "-created", 0, 0);
-    var seq = String(list.length + 1);
-    while (seq.length < 4) seq = "0" + seq;
-    e.record.set("enq_number", "SS-ENQ-" + branch + "-" + fy + "-" + seq);
-    e.record.set("seq", seq);
+    var list = $app.findRecordsByFilter("enquiries","branch='" + branch + "' && fy='" + fy + "'","-created",0,0);
+    var seq  = String(list.length + 1); while (seq.length < 4) seq = "0" + seq;
+    e.record.set("enq_number","SS-ENQ-" + branch + "-" + fy + "-" + seq);
+    e.record.set("seq",seq);
   } catch(_) {}
   return e.next();
 }, "enquiries");
@@ -180,8 +138,8 @@ onRecordCreate(function(e) {
 onRecordCreate(function(e) {
   if (e.record.getString("survey_number") !== "") return e.next();
   try {
-    var enq = $app.findRecordById("enquiries", e.record.getString("enquiry_id"));
-    e.record.set("survey_number", "SS-SRV-" + enq.getString("branch") + "-" + enq.getString("fy") + "-" + enq.getString("seq"));
+    var enq = $app.findRecordById("enquiries",e.record.getString("enquiry_id"));
+    e.record.set("survey_number","SS-SRV-" + enq.getString("branch") + "-" + enq.getString("fy") + "-" + enq.getString("seq"));
   } catch(_) {}
   return e.next();
 }, "surveys");
@@ -190,11 +148,11 @@ onRecordCreate(function(e) {
 onRecordCreate(function(e) {
   if (e.record.getString("quot_number") !== "") return e.next();
   try {
-    var enq = $app.findRecordById("enquiries", e.record.getString("enquiry_id"));
-    var rev = e.record.getInt("revisions") || 0;
+    var enq  = $app.findRecordById("enquiries",e.record.getString("enquiry_id"));
+    var rev  = e.record.getInt("revisions") || 0;
     var base = "SS-QUOT-" + enq.getString("branch") + "-" + enq.getString("fy") + "-" + enq.getString("seq");
     e.record.set("quot_number", rev > 0 ? base + "/" + rev : base);
-    e.record.set("base_id", base);
+    e.record.set("base_id",base);
   } catch(_) {}
   return e.next();
 }, "quotations");
@@ -203,8 +161,8 @@ onRecordCreate(function(e) {
 onRecordCreate(function(e) {
   if (e.record.getString("cfr_number") !== "") return e.next();
   try {
-    var enq = $app.findRecordById("enquiries", e.record.getString("enquiry_id"));
-    e.record.set("cfr_number", "SS-CFR-" + enq.getString("branch") + "-" + enq.getString("fy") + "-" + enq.getString("seq"));
+    var enq = $app.findRecordById("enquiries",e.record.getString("enquiry_id"));
+    e.record.set("cfr_number","SS-CFR-" + enq.getString("branch") + "-" + enq.getString("fy") + "-" + enq.getString("seq"));
   } catch(_) {}
   return e.next();
 }, "cfr");
@@ -213,9 +171,9 @@ onRecordCreate(function(e) {
 onRecordCreate(function(e) {
   if (e.record.getString("inv_number") !== "") return e.next();
   try {
-    var cfr = $app.findRecordById("cfr", e.record.getString("cfr_id"));
-    var enq = $app.findRecordById("enquiries", cfr.getString("enquiry_id"));
-    e.record.set("inv_number", "SS-INV-" + enq.getString("branch") + "-" + enq.getString("fy") + "-" + enq.getString("seq"));
+    var cfr = $app.findRecordById("cfr",e.record.getString("cfr_id"));
+    var enq = $app.findRecordById("enquiries",cfr.getString("enquiry_id"));
+    e.record.set("inv_number","SS-INV-" + enq.getString("branch") + "-" + enq.getString("fy") + "-" + enq.getString("seq"));
   } catch(_) {}
   return e.next();
 }, "invoices");
@@ -224,9 +182,9 @@ onRecordCreate(function(e) {
 onRecordCreate(function(e) {
   if (e.record.getString("ops_number") !== "") return e.next();
   try {
-    var cfr = $app.findRecordById("cfr", e.record.getString("cfr_id"));
-    var enq = $app.findRecordById("enquiries", cfr.getString("enquiry_id"));
-    e.record.set("ops_number", "SS-OPS-" + enq.getString("branch") + "-" + enq.getString("fy") + "-" + enq.getString("seq"));
+    var cfr = $app.findRecordById("cfr",e.record.getString("cfr_id"));
+    var enq = $app.findRecordById("enquiries",cfr.getString("enquiry_id"));
+    e.record.set("ops_number","SS-OPS-" + enq.getString("branch") + "-" + enq.getString("fy") + "-" + enq.getString("seq"));
   } catch(_) {}
   return e.next();
 }, "operations");
@@ -235,15 +193,14 @@ onRecordCreate(function(e) {
 onRecordCreate(function(e) {
   if (e.record.getString("ticket_no") !== "") return e.next();
   try {
-    var all = $app.findRecordsByFilter("tickets", "id != ''", "-created", 0, 0);
-    var seq = String(all.length + 1);
-    while (seq.length < 4) seq = "0" + seq;
-    e.record.set("ticket_no", "SS-TKT-" + seq);
+    var all = $app.findRecordsByFilter("tickets","id != ''","-created",0,0);
+    var seq = String(all.length + 1); while (seq.length < 4) seq = "0" + seq;
+    e.record.set("ticket_no","SS-TKT-" + seq);
   } catch(_) {}
   return e.next();
 }, "tickets");
 
 // ── 11. Health check ──────────────────────────────────────────────────────────
-routerAdd("GET", "/api/erp/ping", function(e) {
-  return e.json(200, { status:"ok", service:"SureShift ERP", version:"2.0.0" });
+routerAdd("GET","/api/erp/ping",function(e) {
+  return e.json(200,{status:"ok",service:"SureShift ERP",version:"2.0.0"});
 });
