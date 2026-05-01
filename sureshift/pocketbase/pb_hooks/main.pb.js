@@ -65,7 +65,7 @@ onMailerRecordPasswordResetSend(function(e) {
   var userName = e.record.getString("name") || e.record.getString("email");
   var resetUrl = "https://erp.sureshift.in?view=reset&token=" + token;
 
-  e.message.setSubject("Reset your SureShift ERP password");
+  e.message.subject = "Reset your SureShift ERP password";
 
   var html = "";
   html += "<!DOCTYPE html><html><body style='margin:0;padding:0;background:#F0F2F5;font-family:Arial,sans-serif'>";
@@ -90,7 +90,7 @@ onMailerRecordPasswordResetSend(function(e) {
   html += "<p style='font-size:11px;color:#94A3B8;margin:0;text-align:center'>&#169; 2026 Sure Shift Relocation Services Pvt. Ltd.</p>";
   html += "</td></tr></table></td></tr></table></body></html>";
 
-  e.message.setHTML(html);
+  e.message.html = html;
   return e.next();
 }, "users");
 
@@ -102,9 +102,9 @@ onRecordCreate(function(e) {
   try {
     var r = e.record;
     var msg = new MailerMessage();
-    msg.setFrom({ address: $os.getenv("SMTP_SENDER") || "noreply@sureshift.in", name: "SureShift ERP" });
-    msg.addTo({ address: alertTo, name: "SureShift Team" });
-    msg.setSubject("New Partner Request: " + r.getString("name"));
+    msg.from = { address: $os.getenv("SMTP_SENDER") || "noreply@sureshift.in", name: "SureShift ERP" };
+    msg.to = [{ address: alertTo, name: "SureShift Team" }];
+    msg.subject = "New Partner Request: " + r.getString("name");
     var body = "<div style='font-family:Arial,sans-serif;max-width:480px;margin:0 auto'>";
     body += "<div style='background:#DB2648;padding:20px;border-radius:12px 12px 0 0'>";
     body += "<span style='color:#fff;font-size:16px;font-weight:700'>New Partner Registration</span></div>";
@@ -115,7 +115,7 @@ onRecordCreate(function(e) {
     body += "<p><strong>Company:</strong> " + r.getString("company") + "</p>";
     body += "<p><strong>Type:</strong> " + r.getString("partner_type") + "</p>";
     body += "</div></div>";
-    msg.setHTML(body);
+    msg.html = body;
     $app.newMailClient().send(msg);
   } catch(_) {}
 }, "partner_requests");
