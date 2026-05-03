@@ -59,40 +59,9 @@ onBootstrap(function(e) {
   } catch(_) {}
 });
 
-// ── 2. Intercept password reset — send branded email with correct URL ─────────
-onMailerRecordPasswordResetSend(function(e) {
-  var token    = e.meta["token"] || "";
-  var userName = e.record.getString("name") || e.record.getString("email");
-  var resetUrl = "https://erp.sureshift.in?view=reset&token=" + token;
-
-  e.message.subject = "Reset your SureShift ERP password";
-
-  var html = "";
-  html += "<!DOCTYPE html><html><body style='margin:0;padding:0;background:#F0F2F5;font-family:Arial,sans-serif'>";
-  html += "<table width='100%' cellpadding='0' cellspacing='0' style='padding:40px 20px'><tr><td align='center'>";
-  html += "<table width='520' cellpadding='0' cellspacing='0' style='background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08)'>";
-  html += "<tr><td style='background:#DB2648;padding:28px 36px'>";
-  html += "<span style='font-size:20px;font-weight:800;color:#fff;letter-spacing:1px'>&#9658; SURESHIFT ERP</span>";
-  html += "</td></tr>";
-  html += "<tr><td style='padding:36px'>";
-  html += "<h2 style='font-size:22px;font-weight:700;color:#0F172A;margin:0 0 16px'>Password Reset Request</h2>";
-  html += "<p style='color:#64748B;font-size:14px;line-height:1.7;margin:0 0 8px'>Hi <strong style='color:#0F172A'>" + userName + "</strong>,</p>";
-  html += "<p style='color:#64748B;font-size:14px;line-height:1.7;margin:0 0 28px'>Click the button below to reset your SureShift ERP password. This link expires in <strong>30 minutes</strong>.</p>";
-  html += "<div style='text-align:center;margin:0 0 28px'>";
-  html += "<a href='" + resetUrl + "' style='display:inline-block;background:#DB2648;color:#fff;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px'>Reset My Password</a>";
-  html += "</div>";
-  html += "<p style='font-size:12px;color:#94A3B8;margin:0 0 12px'>Or copy this link into your browser:</p>";
-  html += "<p style='font-size:11px;color:#DB2648;word-break:break-all;margin:0'>" + resetUrl + "</p>";
-  html += "<hr style='border:none;border-top:1px solid #E2E8F0;margin:24px 0'>";
-  html += "<p style='font-size:12px;color:#94A3B8;margin:0'>If you did not request this, ignore this email.</p>";
-  html += "</td></tr>";
-  html += "<tr><td style='background:#F8FAFC;padding:16px 36px;border-top:1px solid #E2E8F0'>";
-  html += "<p style='font-size:11px;color:#94A3B8;margin:0;text-align:center'>&#169; 2026 Sure Shift Relocation Services Pvt. Ltd.</p>";
-  html += "</td></tr></table></td></tr></table></body></html>";
-
-  e.message.html = html;
-  return e.next();
-}, "users");
+// ── 2. Password reset email — handled via PocketBase dashboard template ─────────
+// Template configured at pb.sureshift.in/_/ > Settings > Mail settings
+// Action URL set to: https://erp.sureshift.in?view=reset&token={TOKEN}
 
 // ── 3. Partner request alert ──────────────────────────────────────────────────
 onRecordCreate(function(e) {
