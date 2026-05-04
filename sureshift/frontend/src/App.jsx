@@ -135,7 +135,7 @@ function ResetPasswordPage({ token, onDone }) {
         </div>
 
         {/* Card */}
-        <div style={{background:"#fff",borderRadius:20,padding:"36px 36px 32px",boxShadow:"0 32px 80px rgba(0,0,0,.25)",animation:"fadeUp .25s ease"}}>
+        <div style={{background:"#fff",borderRadius:20,padding:"36px 36px 32px",boxShadow:"0 32px 80px rgba(219,38,72,.25)",border:"1.5px solid rgba(219,38,72,.15)",animation:"fadeUp .25s ease"}}>
           {done ? (
             <div style={{textAlign:"center",padding:"12px 0"}}>
               <div style={{width:72,height:72,borderRadius:"50%",background:"#F0FDF4",border:"2px solid #86EFAC",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",animation:"scaleIn .4s ease"}}>
@@ -212,8 +212,8 @@ function ResetPasswordPage({ token, onDone }) {
               </form>
 
               <div style={{marginTop:18,textAlign:"center"}}>
-                <button onClick={onDone} style={{fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"#94A3B8",background:"none",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5,transition:"color .15s"}}
-                  onMouseEnter={e=>e.target.style.color="#0F172A"} onMouseLeave={e=>e.target.style.color="#94A3B8"}>
+                <button onClick={onDone} style={{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,color:"#DB2648",background:"none",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5,transition:"color .15s",textDecoration:"none"}}
+                  onMouseEnter={e=>e.currentTarget.style.color="#991B2F"} onMouseLeave={e=>e.currentTarget.style.color="#DB2648"}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
                   Back to Sign In
                 </button>
