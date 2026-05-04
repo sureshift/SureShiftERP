@@ -102,7 +102,7 @@ function ResetPasswordPage({ token, onDone }) {
   const EyeOff = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>;
 
   return (
-    <div style={{minHeight:"100vh",background:"#DB2648",display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:"'Inter',sans-serif",position:"relative",overflow:"hidden"}}>
+    <div style={{minHeight:"100vh",background:"#F0F2F5",display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:"'Inter',sans-serif",position:"relative",overflow:"hidden"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;500;600&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
@@ -120,17 +120,13 @@ function ResetPasswordPage({ token, onDone }) {
         .rp-lbl{display:block;font:600 10.5px 'Inter',sans-serif;color:#64748B;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px}
       `}</style>
 
-      {/* Background dots */}
-      <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(rgba(255,255,255,.08) 1px,transparent 1px)",backgroundSize:"22px 22px",pointerEvents:"none"}}/>
-      {/* Glow circles */}
-      <div style={{position:"absolute",top:-100,right:-100,width:300,height:300,borderRadius:"50%",background:"rgba(255,255,255,.08)",pointerEvents:"none"}}/>
-      <div style={{position:"absolute",bottom:-80,left:-80,width:220,height:220,borderRadius:"50%",background:"rgba(255,255,255,.06)",pointerEvents:"none"}}/>
+
 
       <div style={{width:"100%",maxWidth:440,position:"relative",zIndex:1}}>
         {/* Logo */}
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:28,justifyContent:"center"}}>
-          <div style={{width:42,height:42,borderRadius:12,background:"rgba(255,255,255,.2)",border:"1.5px solid rgba(255,255,255,.35)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <svg width={24} height={24} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#fff" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <div style={{width:42,height:42,borderRadius:12,background:"rgba(219,38,72,.1)",border:"1.5px solid rgba(219,38,72,.2)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width={24} height={24} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#DB2648" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
           <div>
             <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:17,color:"#fff",letterSpacing:"1.2px",lineHeight:1}}>SURESHIFT</div>
@@ -231,7 +227,7 @@ function ResetPasswordPage({ token, onDone }) {
           )}
         </div>
 
-        <p style={{textAlign:"center",marginTop:20,fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.4)"}}>© 2026 Sure Shift Relocation Services Pvt. Ltd.</p>
+        <p style={{textAlign:"center",marginTop:20,fontFamily:"'Inter',sans-serif",fontSize:11,color:"#94A3B8"}}>© 2026 Sure Shift Relocation Services Pvt. Ltd.</p>
       </div>
     </div>
   );
