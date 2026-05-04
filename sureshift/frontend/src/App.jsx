@@ -92,10 +92,9 @@ function ResetPasswordPage({ token, onDone }) {
     try {
       await pb.collection("users").confirmPasswordReset(token, password, confirm);
       setDone(true);
-      setMsg({type:"success",text:"Password reset successfully! Redirecting to login…"});
       setTimeout(() => onDone(), 3000);
-    } catch(err) {
-      setMsg({type:"error",text:"This reset link is invalid or expired. Please request a new one."});
+    } catch(_) {
+      setMsg({type:"error",text:"This reset link is invalid or has expired. Please request a new one."});
     } finally { setBusy(false); }
   };
 
@@ -103,7 +102,7 @@ function ResetPasswordPage({ token, onDone }) {
   const EyeOff = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/></svg>;
 
   return (
-    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0F172A 0%,#1E2D42 100%)",display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:"'Inter',sans-serif"}}>
+    <div style={{minHeight:"100vh",background:"#DB2648",display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:"'Inter',sans-serif",position:"relative",overflow:"hidden"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;500;600&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
@@ -121,129 +120,122 @@ function ResetPasswordPage({ token, onDone }) {
         .rp-lbl{display:block;font:600 10.5px 'Inter',sans-serif;color:#64748B;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px}
       `}</style>
 
-      <div style={{background:"#fff",borderRadius:22,width:"100%",maxWidth:440,padding:"40px 40px 36px",boxShadow:"0 32px 80px rgba(0,0,0,.35)",animation:"fadeUp .25s ease"}}>
+      {/* Background dots */}
+      <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(rgba(255,255,255,.08) 1px,transparent 1px)",backgroundSize:"22px 22px",pointerEvents:"none"}}/>
+      {/* Glow circles */}
+      <div style={{position:"absolute",top:-100,right:-100,width:300,height:300,borderRadius:"50%",background:"rgba(255,255,255,.08)",pointerEvents:"none"}}/>
+      <div style={{position:"absolute",bottom:-80,left:-80,width:220,height:220,borderRadius:"50%",background:"rgba(255,255,255,.06)",pointerEvents:"none"}}/>
+
+      <div style={{width:"100%",maxWidth:440,position:"relative",zIndex:1}}>
         {/* Logo */}
-        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:30,justifyContent:"center"}}>
-          <div style={{width:38,height:38,borderRadius:10,background:"rgba(219,38,72,.1)",border:"1.5px solid rgba(219,38,72,.2)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <svg width={22} height={22} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#DB2648" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:28,justifyContent:"center"}}>
+          <div style={{width:42,height:42,borderRadius:12,background:"rgba(255,255,255,.2)",border:"1.5px solid rgba(255,255,255,.35)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width={24} height={24} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#fff" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
           <div>
-            <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:16,color:"#0F172A",letterSpacing:"1px"}}>SURE<span style={{color:"#DB2648"}}>SHIFT</span></div>
-            <div style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:"#94A3B8",letterSpacing:"2px",textTransform:"uppercase"}}>ERP v2.0</div>
+            <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:17,color:"#fff",letterSpacing:"1.2px",lineHeight:1}}>SURESHIFT</div>
+            <div style={{fontFamily:"'Inter',sans-serif",fontSize:9.5,color:"rgba(255,255,255,.55)",letterSpacing:"2.5px",textTransform:"uppercase",marginTop:2}}>ERP v2.0</div>
           </div>
         </div>
 
-        {done ? (
-          <div style={{textAlign:"center",animation:"fadeUp .3s ease"}}>
-            <div style={{width:72,height:72,borderRadius:"50%",background:"#F0FDF4",border:"2px solid #86EFAC",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",animation:"scaleIn .4s ease"}}>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
-            </div>
-            <h2 style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:22,color:"#0F172A",marginBottom:10}}>Password Updated!</h2>
-            <p style={{fontFamily:"'Inter',sans-serif",fontSize:14,color:"#64748B",lineHeight:1.7,marginBottom:24}}>Your password has been reset. Redirecting to login…</p>
-            <div style={{width:24,height:24,border:"3px solid rgba(219,38,72,.2)",borderTopColor:"#DB2648",borderRadius:"50%",animation:"spin .75s linear infinite",margin:"0 auto"}}/>
-          </div>
-        ) : (
-          <>
-            <div style={{textAlign:"center",marginBottom:26}}>
-              <div style={{width:60,height:60,borderRadius:14,background:"rgba(219,38,72,.07)",border:"1.5px solid rgba(219,38,72,.15)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#DB2648" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        {/* Card */}
+        <div style={{background:"#fff",borderRadius:20,padding:"36px 36px 32px",boxShadow:"0 32px 80px rgba(0,0,0,.25)",animation:"fadeUp .25s ease"}}>
+          {done ? (
+            <div style={{textAlign:"center",padding:"12px 0"}}>
+              <div style={{width:72,height:72,borderRadius:"50%",background:"#F0FDF4",border:"2px solid #86EFAC",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",animation:"scaleIn .4s ease"}}>
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
               </div>
-              <h2 style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:21,color:"#0F172A",marginBottom:7}}>Set New Password</h2>
-              <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#64748B",lineHeight:1.65}}>Choose a strong password for your SureShift ERP account.</p>
+              <h2 style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:22,color:"#0F172A",marginBottom:10}}>Password Updated!</h2>
+              <p style={{fontFamily:"'Inter',sans-serif",fontSize:14,color:"#64748B",lineHeight:1.7,marginBottom:24}}>Your password has been reset successfully. Redirecting to login…</p>
+              <div style={{width:24,height:24,border:"3px solid rgba(219,38,72,.2)",borderTopColor:"#DB2648",borderRadius:"50%",animation:"spin .75s linear infinite",margin:"0 auto"}}/>
             </div>
-
-            {msg && (
-              <div style={{background:msg.type==="success"?"#F0FDF4":"#FFF5F5",border:"1px solid " + (msg.type==="success"?"#A7F3D0":"#FECACA"),borderRadius:10,padding:"11px 14px",marginBottom:20,display:"flex",gap:9,alignItems:"flex-start"}}>
-                {msg.type==="success"
-                  ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
-                  : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                }
-                <span style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:msg.type==="success"?"#065F46":"#991B1B",lineHeight:1.5}}>{msg.text}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleReset}>
-              <div style={{marginBottom:14}}>
-                <label className="rp-lbl">New password</label>
-                <div style={{position:"relative"}}>
-                  <input className="rp-inp" type={showPwd?"text":"password"} placeholder="Minimum 8 characters"
-                    value={password} autoFocus
-                    onChange={e=>{setPassword(e.target.value);setMsg(null);}}
-                    onFocus={()=>setFf("pwd")} onBlur={()=>setFf(null)}
-                    style={{paddingLeft:38,paddingRight:42}}/>
-                  <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ic("pwd")} strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                  <button type="button" className="rp-eye" onClick={()=>setShowPwd(v=>!v)}>{showPwd?<EyeOff/>:<EyeOn/>}</button>
+          ) : (
+            <>
+              <div style={{textAlign:"center",marginBottom:24}}>
+                <div style={{width:58,height:58,borderRadius:14,background:"rgba(219,38,72,.08)",border:"1.5px solid rgba(219,38,72,.15)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px"}}>
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#DB2648" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                 </div>
-                {password && (
-                  <div style={{marginTop:7,display:"flex",alignItems:"center",gap:8}}>
-                    <div style={{flex:1,height:4,background:"#F1F5F9",borderRadius:20,overflow:"hidden"}}>
-                      <div style={{height:"100%",width:[0,33,66,100][strength]+"%",background:strengthColor,borderRadius:20,transition:"all .3s"}}/>
-                    </div>
-                    <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:600,color:strengthColor,minWidth:36}}>{strengthLabel}</span>
+                <h2 style={{fontFamily:"'Poppins',sans-serif",fontWeight:700,fontSize:21,color:"#0F172A",marginBottom:7}}>Set New Password</h2>
+                <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#64748B",lineHeight:1.65}}>Choose a strong password for your SureShift ERP account.</p>
+              </div>
+
+              {msg && (
+                <div style={{background:msg.type==="success"?"#F0FDF4":"#FFF5F5",border:"1px solid "+(msg.type==="success"?"#A7F3D0":"#FECACA"),borderRadius:10,padding:"11px 14px",marginBottom:20,display:"flex",gap:9,alignItems:"flex-start"}}>
+                  {msg.type==="success"
+                    ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+                    : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  }
+                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:msg.type==="success"?"#065F46":"#991B1B",lineHeight:1.5}}>{msg.text}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleReset}>
+                <div style={{marginBottom:14}}>
+                  <label className="rp-lbl">New password</label>
+                  <div style={{position:"relative"}}>
+                    <input className="rp-inp" type={showPwd?"text":"password"} placeholder="Minimum 8 characters"
+                      value={password} autoFocus
+                      onChange={e=>{setPassword(e.target.value);setMsg(null);}}
+                      onFocus={()=>setFf("pwd")} onBlur={()=>setFf(null)}
+                      style={{paddingLeft:38,paddingRight:42}}/>
+                    <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ic("pwd")} strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                    <button type="button" className="rp-eye" onClick={()=>setShowPwd(v=>!v)}>{showPwd?<EyeOff/>:<EyeOn/>}</button>
                   </div>
-                )}
-              </div>
-
-              <div style={{marginBottom:24}}>
-                <label className="rp-lbl">Confirm password</label>
-                <div style={{position:"relative"}}>
-                  <input className="rp-inp" type={showCpwd?"text":"password"} placeholder="Repeat your password"
-                    value={confirm}
-                    onChange={e=>{setConfirm(e.target.value);setMsg(null);}}
-                    onFocus={()=>setFf("cpwd")} onBlur={()=>setFf(null)}
-                    style={{paddingLeft:38,paddingRight:42,borderColor:confirm&&confirm!==password?"#FCA5A5":""}}/>
-                  <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ic("cpwd")} strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                  <button type="button" className="rp-eye" onClick={()=>setShowCpwd(v=>!v)}>{showCpwd?<EyeOff/>:<EyeOn/>}</button>
+                  {password && (
+                    <div style={{marginTop:7,display:"flex",alignItems:"center",gap:8}}>
+                      <div style={{flex:1,height:4,background:"#F1F5F9",borderRadius:20,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:[0,33,66,100][strength]+"%",background:strengthColor,borderRadius:20,transition:"all .3s"}}/>
+                      </div>
+                      <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:600,color:strengthColor,minWidth:36}}>{strengthLabel}</span>
+                    </div>
+                  )}
                 </div>
-                {confirm && confirm!==password && (
-                  <p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:5}}>Passwords do not match</p>
-                )}
+
+                <div style={{marginBottom:24}}>
+                  <label className="rp-lbl">Confirm password</label>
+                  <div style={{position:"relative"}}>
+                    <input className="rp-inp" type={showCpwd?"text":"password"} placeholder="Repeat your password"
+                      value={confirm}
+                      onChange={e=>{setConfirm(e.target.value);setMsg(null);}}
+                      onFocus={()=>setFf("cpwd")} onBlur={()=>setFf(null)}
+                      style={{paddingLeft:38,paddingRight:42,borderColor:confirm&&confirm!==password?"#FCA5A5":""}}/>
+                    <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ic("cpwd")} strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                    <button type="button" className="rp-eye" onClick={()=>setShowCpwd(v=>!v)}>{showCpwd?<EyeOff/>:<EyeOn/>}</button>
+                  </div>
+                  {confirm && confirm!==password && (
+                    <p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:5}}>Passwords do not match</p>
+                  )}
+                </div>
+
+                <button type="submit" className="rp-btn" disabled={busy}>
+                  {busy
+                    ? <><div style={{width:16,height:16,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .7s linear infinite"}}/> Resetting…</>
+                    : <>Reset Password <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg></>
+                  }
+                </button>
+              </form>
+
+              <div style={{marginTop:18,textAlign:"center"}}>
+                <button onClick={onDone} style={{fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"#94A3B8",background:"none",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5,transition:"color .15s"}}
+                  onMouseEnter={e=>e.target.style.color="#0F172A"} onMouseLeave={e=>e.target.style.color="#94A3B8"}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                  Back to Sign In
+                </button>
               </div>
 
-              <button type="submit" className="rp-btn" disabled={busy}>
-                {busy
-                  ? <><div style={{width:16,height:16,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .7s linear infinite"}}/> Resetting…</>
-                  : <>Reset Password <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg></>
-                }
-              </button>
-            </form>
-
-            <div style={{marginTop:18,textAlign:"center"}}>
-              <button onClick={onDone} style={{fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"#64748B",background:"none",border:"none",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:5}}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                Back to Sign In
-              </button>
-            </div>
-
-            <div style={{marginTop:14,padding:"10px 13px",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:8,display:"flex",gap:7,alignItems:"flex-start"}}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#92400E",lineHeight:1.55}}>Reset links expire in <strong>30 minutes</strong>. If expired, go back and request a new one.</span>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Splash ────────────────────────────────────────────────────────────────────
-function Splash() {
-  return (
-    <div style={{height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0F172A"}}>
-      <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
-      <div style={{textAlign:"center"}}>
-        <svg width={44} height={44} viewBox="0 0 60 60" fill="none" style={{display:"block",margin:"0 auto 14px"}}>
-          <path d="M12 8 L48 30 L12 52" stroke="#DB2648" strokeWidth="13" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        <div style={{fontFamily:"'Poppins',sans-serif",fontSize:16,fontWeight:700,color:"#fff",letterSpacing:"1px",marginBottom:14}}>
-          SURE<span style={{color:"#DB2648"}}>SHIFT</span> ERP
+              <div style={{marginTop:14,padding:"10px 13px",background:"rgba(219,38,72,.05)",border:"1px solid rgba(219,38,72,.15)",borderRadius:8,display:"flex",gap:7,alignItems:"flex-start"}}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#DB2648" strokeWidth="2" strokeLinecap="round" style={{flexShrink:0,marginTop:1}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DB2648",lineHeight:1.55}}>Reset links expire in <strong>30 minutes</strong>. If expired, go back and request a new one.</span>
+              </div>
+            </>
+          )}
         </div>
-        <div style={{width:26,height:26,border:"3px solid rgba(219,38,72,.3)",borderTopColor:"#DB2648",borderRadius:"50%",animation:"spin .8s linear infinite",margin:"0 auto"}}/>
+
+        <p style={{textAlign:"center",marginTop:20,fontFamily:"'Inter',sans-serif",fontSize:11,color:"rgba(255,255,255,.4)"}}>© 2026 Sure Shift Relocation Services Pvt. Ltd.</p>
       </div>
     </div>
   );
 }
-
 // ── Login ─────────────────────────────────────────────────────────────────────
 const INIT_SF = { name:"", email:"", phone:"", company:"", partnerType:"" };
 
