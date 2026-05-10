@@ -123,19 +123,24 @@ function ResetPasswordPage({ token, onDone }) {
 
 
       <div style={{width:"100%",maxWidth:440,position:"relative",zIndex:1}}>
-        {/* Logo */}
-        <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:28,justifyContent:"center"}}>
-          <div style={{width:42,height:42,borderRadius:12,background:"rgba(255,255,255,.2)",border:"1.5px solid rgba(255,255,255,.35)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <svg width={24} height={24} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#fff" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </div>
-          <div>
-            <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:17,color:"#fff",letterSpacing:"1.2px",lineHeight:1}}>SURESHIFT</div>
-            <div style={{fontFamily:"'Inter',sans-serif",fontSize:9.5,color:"rgba(255,255,255,.55)",letterSpacing:"2.5px",textTransform:"uppercase",marginTop:2}}>ERP v2.0</div>
-          </div>
-        </div>
+        {/* Card with brand color logo header */}
+        <div style={{borderRadius:20,overflow:"hidden",boxShadow:"0 24px 80px rgba(0,0,0,.14)",animation:"fadeUp .25s ease"}}>
 
-        {/* Card */}
-        <div style={{background:"#fff",borderRadius:20,padding:"36px 36px 32px",boxShadow:"0 32px 80px rgba(0,0,0,.25)",animation:"fadeUp .25s ease"}}>
+          {/* Logo section — brand color */}
+          <div style={{background:"#DB2648",padding:"24px 36px",display:"flex",alignItems:"center",gap:11,position:"relative",overflow:"hidden"}}>
+            <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px)",backgroundSize:"20px 20px",pointerEvents:"none"}}/>
+            <div style={{position:"absolute",top:-40,right:-40,width:130,height:130,borderRadius:"50%",background:"rgba(255,255,255,.07)",pointerEvents:"none"}}/>
+            <div style={{width:38,height:38,borderRadius:10,background:"rgba(255,255,255,.2)",border:"1.5px solid rgba(255,255,255,.35)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,position:"relative"}}>
+              <svg width={22} height={22} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#fff" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <div style={{position:"relative"}}>
+              <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:16,color:"#fff",letterSpacing:"1.2px",lineHeight:1}}>SURESHIFT</div>
+              <div style={{fontFamily:"'Inter',sans-serif",fontSize:9,color:"rgba(255,255,255,.55)",letterSpacing:"2.5px",textTransform:"uppercase",marginTop:2}}>ERP v2.0</div>
+            </div>
+          </div>
+
+          {/* Form section — white */}
+          <div style={{background:"#fff",padding:"32px 36px 32px"}}>
           {done ? (
             <div style={{textAlign:"center",padding:"12px 0"}}>
               <div style={{width:72,height:72,borderRadius:"50%",background:"#F0FDF4",border:"2px solid #86EFAC",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",animation:"scaleIn .4s ease"}}>
@@ -226,6 +231,7 @@ function ResetPasswordPage({ token, onDone }) {
             </>
           )}
         </div>
+        </div>{/* end card */}
 
         <p style={{textAlign:"center",marginTop:20,fontFamily:"'Inter',sans-serif",fontSize:11,color:"#94A3B8"}}>© 2026 Sure Shift Relocation Services Pvt. Ltd.</p>
       </div>
