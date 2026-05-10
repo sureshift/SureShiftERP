@@ -125,8 +125,8 @@ function ResetPasswordPage({ token, onDone }) {
       <div style={{width:"100%",maxWidth:440,position:"relative",zIndex:1}}>
         {/* Logo */}
         <div style={{display:"flex",alignItems:"center",gap:11,marginBottom:28,justifyContent:"center"}}>
-          <div style={{width:42,height:42,borderRadius:12,background:"rgba(219,38,72,.1)",border:"1.5px solid rgba(219,38,72,.2)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <svg width={24} height={24} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#DB2648" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <div style={{width:42,height:42,borderRadius:12,background:"rgba(255,255,255,.2)",border:"1.5px solid rgba(255,255,255,.35)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width={24} height={24} viewBox="0 0 60 60" fill="none"><path d="M12 8 L48 30 L12 52" stroke="#fff" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
           <div>
             <div style={{fontFamily:"'Poppins',sans-serif",fontWeight:800,fontSize:17,color:"#fff",letterSpacing:"1.2px",lineHeight:1}}>SURESHIFT</div>
@@ -135,7 +135,7 @@ function ResetPasswordPage({ token, onDone }) {
         </div>
 
         {/* Card */}
-        <div style={{background:"#fff",borderRadius:20,padding:"36px 36px 32px",boxShadow:"0 32px 80px rgba(219,38,72,.25)",border:"1.5px solid rgba(219,38,72,.15)",animation:"fadeUp .25s ease"}}>
+        <div style={{background:"#fff",borderRadius:20,padding:"36px 36px 32px",boxShadow:"0 32px 80px rgba(0,0,0,.25)",animation:"fadeUp .25s ease"}}>
           {done ? (
             <div style={{textAlign:"center",padding:"12px 0"}}>
               <div style={{width:72,height:72,borderRadius:"50%",background:"#F0FDF4",border:"2px solid #86EFAC",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 20px",animation:"scaleIn .4s ease"}}>
