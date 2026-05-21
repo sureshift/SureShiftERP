@@ -34,6 +34,151 @@ export function hasPerm(user,mod,action){
 }
 
 // ── Root ──────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  GLOBAL TOAST SYSTEM
+// ─────────────────────────────────────────────────────────────────────────────
+const ToastCtx = createContext(null);
+export const useToast = () => useContext(ToastCtx);
+
+function ToastProvider({ children }) {
+  const [toasts, setToasts] = useState([]);
+  const add = useCallback((msg, type="success", dur=4000) => {
+    const id = Date.now() + Math.random();
+    setToasts(t => [...t, { id, msg, type }]);
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), dur);
+  }, []);
+  const remove = useCallback(id => setToasts(t => t.filter(x => x.id !== id)), []);
+  return (
+    <ToastCtx.Provider value={add}>
+      {children}
+      <ToastContainer toasts={toasts} remove={remove}/>
+    </ToastCtx.Provider>
+  );
+}
+
+function ToastContainer({ toasts, remove }) {
+  if (!toasts.length) return null;
+  const ICONS = {
+    success: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>,
+    error:   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+    warning: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+    info:    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
+  };
+  const COLORS = { success:["#F0FDF4","#22C55E","#166534"], error:["#FFF5F5","#EF4444","#991B1B"], warning:["#FFFBEB","#F59E0B","#92400E"], info:["#EFF6FF","#3B82F6","#1E3A5F"] };
+  return (
+    <div style={{position:"fixed",bottom:24,right:24,zIndex:9999,display:"flex",flexDirection:"column",gap:10,maxWidth:380}}>
+      <style>{`@keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}`}</style>
+      {toasts.map(t => {
+        const [bg,accent,text] = COLORS[t.type]||COLORS.info;
+        return (
+          <div key={t.id} style={{background:bg,border:`1px solid ${accent}40`,borderLeft:`4px solid ${accent}`,borderRadius:10,padding:"12px 14px",display:"flex",alignItems:"flex-start",gap:10,boxShadow:"0 4px 16px rgba(0,0,0,.1)",animation:"slideInRight .25s ease",fontFamily:"'Inter',sans-serif"}}>
+            <span style={{color:accent,flexShrink:0,marginTop:1}}>{ICONS[t.type]}</span>
+            <span style={{flex:1,fontSize:13,color:text,lineHeight:1.5,fontWeight:500}}>{t.msg}</span>
+            <button onClick={()=>remove(t.id)} style={{background:"none",border:"none",cursor:"pointer",color:text,opacity:.5,fontSize:16,lineHeight:1,padding:"0 2px",flexShrink:0}}>×</button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  VALIDATION UTILITIES
+// ─────────────────────────────────────────────────────────────────────────────
+const V = {
+  required:  v => (!v || !String(v).trim()) ? "This field is required" : null,
+  email:     v => v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? "Enter a valid email address" : null,
+  phone:     v => v && !/^[+]?[\d\s\-().]{8,15}$/.test(v) ? "Enter a valid phone number" : null,
+  minLen:    n => v => v && v.length < n ? `Minimum ${n} characters required` : null,
+  numeric:   v => v && isNaN(Number(v)) ? "Must be a number" : null,
+  positive:  v => v && Number(v) < 0 ? "Must be a positive number" : null,
+  maxLen:    n => v => v && v.length > n ? `Maximum ${n} characters allowed` : null,
+};
+
+function validate(rules, data) {
+  const errs = {};
+  Object.entries(rules).forEach(([field, fns]) => {
+    for (const fn of (Array.isArray(fns)?fns:[fns])) {
+      const err = fn(data[field]);
+      if (err) { errs[field] = err; break; }
+    }
+  });
+  return errs;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  REALTIME INDICATOR
+// ─────────────────────────────────────────────────────────────────────────────
+function RealtimeBadge() {
+  const [live, setLive] = useState(true);
+  useEffect(() => {
+    const check = () => setLive(pb.authStore.isValid || true);
+    const t = setInterval(check, 5000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",background:live?"rgba(34,197,94,.1)":"rgba(239,68,68,.1)",border:`1px solid ${live?"rgba(34,197,94,.3)":"rgba(239,68,68,.3)"}`,borderRadius:99}}>
+      <div style={{width:6,height:6,borderRadius:"50%",background:live?"#22C55E":"#EF4444",animation:"pulseDot 2s ease infinite"}}/>
+      <span style={{fontFamily:"'Inter',sans-serif",fontSize:10.5,fontWeight:600,color:live?"#166534":"#991B1B"}}>{live?"Live":"Offline"}</span>
+    </div>
+  );
+}
+
+// Validated Input component
+function VInput({ label, name, value, onChange, errors, type="text", placeholder, req, icon, half, rows }) {
+  const [focused, setFocused] = useState(false);
+  const err = errors?.[name];
+  const borderColor = err ? "#EF4444" : focused ? "#DB2648" : "#E2E8F0";
+  const shadow = err ? "0 0 0 3px rgba(239,68,68,.09)" : focused ? "0 0 0 3px rgba(219,38,72,.09)" : "none";
+  const baseStyle = { width:"100%", padding:"10px 13px", border:`1.5px solid ${borderColor}`, borderRadius:9, font:"400 13.5px/1.2 'Inter',sans-serif", color:"#0F172A", outline:"none", background:"#fff", transition:"all .18s", boxSizing:"border-box", boxShadow:shadow, paddingLeft: icon ? 36 : "10px 13px" };
+  const labelStyle = { display:"block", fontFamily:"'Inter',sans-serif", fontSize:11, fontWeight:700, color: err ? "#EF4444" : "#64748B", marginBottom:5, textTransform:"uppercase", letterSpacing:".5px" };
+  return (
+    <div style={{ marginBottom:14, gridColumn: half ? "span 1" : "span 2" }}>
+      <label style={labelStyle}>{label}{req && <span style={{color:"#DB2648"}}> *</span>}</label>
+      <div style={{position:"relative"}}>
+        {icon && <span style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"color .15s",color: focused ? "#DB2648" : err ? "#EF4444" : "#CBD5E1"}}>{icon}</span>}
+        {rows
+          ? <textarea className="inp" rows={rows} value={value} placeholder={placeholder}
+              onChange={e=>onChange(name,e.target.value)}
+              onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
+              style={{...baseStyle,resize:"vertical"}}/>
+          : <input type={type} value={value} placeholder={placeholder}
+              onChange={e=>onChange(name,e.target.value)}
+              onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
+              style={baseStyle}/>
+        }
+      </div>
+      {err && <p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#EF4444",marginTop:4,display:"flex",alignItems:"center",gap:4}}>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {err}
+      </p>}
+    </div>
+  );
+}
+
+function VSelect({ label, name, value, onChange, errors, options, req, half }) {
+  const [focused, setFocused] = useState(false);
+  const err = errors?.[name];
+  const borderColor = err ? "#EF4444" : focused ? "#DB2648" : "#E2E8F0";
+  return (
+    <div style={{ marginBottom:14, gridColumn: half ? "span 1" : "span 2" }}>
+      <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:err?"#EF4444":"#64748B",marginBottom:5,textTransform:"uppercase",letterSpacing:".5px"}}>{label}{req && <span style={{color:"#DB2648"}}> *</span>}</label>
+      <select value={value} onChange={e=>onChange(name,e.target.value)}
+        onFocus={()=>setFocused(true)} onBlur={()=>setFocused(false)}
+        style={{appearance:"none",width:"100%",padding:"10px 36px 10px 13px",border:`1.5px solid ${borderColor}`,borderRadius:9,font:"400 13.5px/1 'Inter',sans-serif",color:value?"#0F172A":"#CBD5E1",outline:"none",background:`#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.7'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E") no-repeat right 13px center`,cursor:"pointer",boxSizing:"border-box",boxShadow:focused?"0 0 0 3px rgba(219,38,72,.09)":"none",transition:"all .18s"}}>
+        <option value="">Select…</option>
+        {options.map(o => <option key={o.value||o} value={o.value||o}>{o.label||o}</option>)}
+      </select>
+      {err && <p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#EF4444",marginTop:4,display:"flex",alignItems:"center",gap:4}}>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {err}
+      </p>}
+    </div>
+  );
+}
+
+
 export default function App() {
   const authHook = useAuth();
   const { settings, loading:settingsLoading, save:saveSetting } = useSettings();
@@ -60,10 +205,14 @@ export default function App() {
     return <ResetPasswordPage token={resetToken} onDone={()=>setResetToken(null)}/>;
   }
 
+  // Show reset page immediately before auth check
+  if (resetToken) return <ResetPasswordPage token={resetToken} onDone={()=>setResetToken(null)}/>;
   return (
-    <AuthCtx.Provider value={ctx}>
-      {authHook.loading?<Splash/>:authHook.user?<Shell/>:<Login/>}
-    </AuthCtx.Provider>
+    <ToastProvider>
+      <AuthCtx.Provider value={ctx}>
+        {authHook.loading?<Splash/>:authHook.user?<Shell/>:<Login/>}
+      </AuthCtx.Provider>
+    </ToastProvider>
   );
 }
 
@@ -238,7 +387,7 @@ function ResetPasswordPage({ token, onDone }) {
     </div>
   );
 }
-// ── Login ─────────────────────────────────────────────────────────────────────
+
 const INIT_SF = { name:"", email:"", phone:"", company:"", partnerType:"" };
 
 function Login() {
@@ -1054,8 +1203,8 @@ const fmt = n => { if(!n)return"₹0"; if(n>=10000000)return`₹${(n/10000000).t
 // ──────────────────────────────────────────────────────────────────────────────
 function SuperAdminDash() {
   const { user } = useAppAuth();
-  const { items:enqs,  loading:eL } = useCollection("enquiries",  { sort:"-created", perPage:500 });
-  const { items:cfrs,  loading:cL } = useCollection("cfr",        { sort:"-created", perPage:500 });
+  const { items:enqs,  loading:eL } = useCollection("enquiries",  { sort:"-created", perPage:500, realtime:true });
+  const { items:cfrs,  loading:cL } = useCollection("cfr",        { sort:"-created", perPage:500, realtime:true });
   const { items:invs,  loading:iL } = useCollection("invoices",   { sort:"-created", perPage:500 });
   const { items:vens,  loading:vL } = useCollection("vendors",    { sort:"-created" });
   const { items:users, loading:uL } = useCollection("users",      { sort:"-created" });
@@ -1568,10 +1717,12 @@ function VendorDash() {
 }
 
 function EnquiriesPage(){
+  const toast=useToast();
+  const [ferr,setFerr]=useState({});
   const {user}=useAppAuth();
   const [show,setShow]=useState(false);
   const [q,setQ]=useState(""); const [sf,setSf]=useState("");
-  const {items,loading,refresh}=useCollection("enquiries",{sort:"-created",perPage:200});
+  const {items,loading,refresh}=useCollection("enquiries",{sort:"-created",perPage:200,realtime:true});
   const {create,loading:saving}=useMutation("enquiries");
   const [f,setF]=useState({name:"",phone:"",email:"",alt_phone:"",from_address:"",to_address:"",move_type:"household",source:"website",stage:"new",branch:user?.branch||"NDLH",fy:FY,seq:"0",apt_size:"",move_date:"",notes:""});
   const filtered=items.filter(e=>{
@@ -1579,7 +1730,12 @@ function EnquiriesPage(){
     return(!qq||e.name?.toLowerCase().includes(qq)||e.phone?.includes(qq)||e.enq_number?.toLowerCase().includes(qq))&&(!sf||e.stage===sf);
   });
   const save=async()=>{
-    if(!f.name||!f.phone||!f.from_address||!f.to_address){alert("Fill required fields");return;}
+    const e2=validate({name:[V.required],phone:[V.required,V.phone],email:[V.email],from_address:[V.required],to_address:[V.required]},f);
+    if(Object.keys(e2).length){setFerr(e2);return;}
+    setFerr({});setErr("");
+    try{await create(f);toast("Enquiry created!","success");setShow(false);setF(initF);refresh();}
+    catch(e){toast(e.message||"Failed","error");setErr(e.message);}
+  }
     try{await create(f);setShow(false);setF({...f,name:"",phone:"",email:"",alt_phone:"",from_address:"",to_address:"",apt_size:"",move_date:"",notes:""});refresh();}catch(e){alert(e.message);}
   };
   return(
@@ -1633,12 +1789,13 @@ function EnquiriesPage(){
 
 // ── SURVEYS ───────────────────────────────────────────────────────────────────
 function SurveysPage(){
+  const toast=useToast();
   const [show,setShow]=useState(false);
   const {items,loading,refresh}=useCollection("surveys",{sort:"-created",perPage:200});
   const {create,loading:saving}=useMutation("surveys");
   const [f,setF]=useState({enquiry_id:"",agent_name:"",survey_date:"",survey_time:"",floor:"",has_lift:false,distance:"",condition:"",agent_notes:"",status:"pending"});
   const SS=["pending","assigned","scheduled","in-progress","completed","report-filed"];
-  const save=async()=>{try{await create(f);setShow(false);refresh();}catch(e){alert(e.message);}};
+  const save=async()=>{try{await create(f);toast("Created successfully!","success");setShow(false);refresh();}catch(e){toast(e.message||"Failed","error");}};
   return(
     <div className="page-fade">
       <PageHeader title={`Surveys (${items.length})`} action={<button className="erp-btn erp-btn-primary" onClick={()=>setShow(true)}>+ New Survey</button>}/>
@@ -1678,6 +1835,7 @@ function SurveysPage(){
 
 // ── QUOTATIONS ────────────────────────────────────────────────────────────────
 function QuotationsPage(){
+  const toast=useToast();
   const [show,setShow]=useState(false);
   const {items,loading,refresh}=useCollection("quotations",{sort:"-created",perPage:200});
   const {create,loading:saving}=useMutation("quotations");
@@ -1723,12 +1881,13 @@ function QuotationsPage(){
 
 // ── BOOKINGS ──────────────────────────────────────────────────────────────────
 function BookingsPage(){
+  const toast=useToast();
   const [show,setShow]=useState(false);
   const {items,loading,refresh}=useCollection("cfr",{sort:"-created",perPage:200});
   const {create,loading:saving}=useMutation("cfr");
   const [f,setF]=useState({enquiry_id:"",quotation_id:"",grand_total:"",token_amt:"",move_date:"",vehicle:"",vehicle_no:"",is_interstate:false,status:"token-pending"});
   const SS=["token-pending","token-received","confirmed","vendor-assigned","ops-ready","in-transit","delivered","cancelled"];
-  const save=async()=>{try{await create({...f,grand_total:+f.grand_total,token_amt:+f.token_amt,total_paid:0});setShow(false);refresh();}catch(e){alert(e.message);}};
+  const save=async()=>{try{await create({...f,grand_total:+f.grand_total,token_amt:+f.token_amt,total_paid:0});toast("Booking created!","success");setShow(false);refresh();}catch(e){alert(e.message);}};
   return(
     <div className="page-fade">
       <PageHeader title={`Bookings / CFR (${items.length})`} action={<button className="erp-btn erp-btn-primary" onClick={()=>setShow(true)}>+ New Booking</button>}/>
@@ -1769,12 +1928,13 @@ function BookingsPage(){
 
 // ── OPERATIONS ────────────────────────────────────────────────────────────────
 function OperationsPage(){
+  const toast=useToast();
   const [show,setShow]=useState(false);
   const {items,loading,refresh}=useCollection("operations",{sort:"-created",perPage:200});
   const {create,loading:saving}=useMutation("operations");
   const [f,setF]=useState({cfr_id:"",bilty_no:"",invoice_no:"",stage:"dispatch-mat"});
   const SS=["dispatch-mat","packing","loading","in-transit","unloading","delivered"];
-  const save=async()=>{try{await create(f);setShow(false);refresh();}catch(e){alert(e.message);}};
+  const save=async()=>{try{await create(f);toast("Created successfully!","success");setShow(false);refresh();}catch(e){toast(e.message||"Failed","error");}};
   return(
     <div className="page-fade">
       <PageHeader title={`Operations (${items.length})`} action={<button className="erp-btn erp-btn-primary" onClick={()=>setShow(true)}>+ New Operation</button>}/>
@@ -1805,12 +1965,13 @@ function OperationsPage(){
 
 // ── INVOICES ──────────────────────────────────────────────────────────────────
 function InvoicesPage(){
+  const toast=useToast();
   const [show,setShow]=useState(false);
   const {items,loading,refresh}=useCollection("invoices",{sort:"-created",perPage:200});
   const {create,loading:saving}=useMutation("invoices");
   const [f,setF]=useState({cfr_id:"",grand_total:"",paid_amt:"0",outstanding:"",invoice_date:"",due_date:"",gst_no:"",hsn_code:"998543",status:"draft"});
   const SS=["draft","sent","partial","paid","overdue","cancelled"];
-  const save=async()=>{const gt=+f.grand_total,pa=+f.paid_amt;try{await create({...f,grand_total:gt,paid_amt:pa,outstanding:gt-pa});setShow(false);refresh();}catch(e){alert(e.message);}};
+  const save=async()=>{const gt=+f.grand_total,pa=+f.paid_amt;try{await create({...f,grand_total:gt,paid_amt:pa,outstanding:gt-pa});toast("Invoice created!","success");setShow(false);refresh();}catch(e){alert(e.message);}};
   return(
     <div className="page-fade">
       <PageHeader title={`Invoices (${items.length})`} action={<button className="erp-btn erp-btn-primary" onClick={()=>setShow(true)}>+ New Invoice</button>}/>
@@ -1849,11 +2010,19 @@ function InvoicesPage(){
 
 // ── VENDORS ───────────────────────────────────────────────────────────────────
 function VendorsPage(){
+  const toast=useToast();
+  const [ferr,setFerr]=useState({});
   const [show,setShow]=useState(false);
   const {items,loading,refresh}=useCollection("vendors",{sort:"-created",perPage:200});
   const {create,loading:saving}=useMutation("vendors");
   const [f,setF]=useState({name:"",type:"vehicle_vendor",contact:"",phone:"",email:"",gst:"",branch:"NDLH",status:"active",rating:5});
-  const save=async()=>{if(!f.name||!f.contact){alert("Name and contact required");return;}try{await create({...f,rating:+f.rating});setShow(false);refresh();}catch(e){alert(e.message);}};
+  const save=async()=>{
+    const e2=validate({name:[V.required],contact:[V.required],phone:[V.phone],email:[V.email]},f);
+    if(Object.keys(e2).length){setFerr(e2);return;}
+    setFerr({});setErr("");
+    try{await create({...f,rating:+f.rating});toast("Vendor added!","success");setShow(false);setF(init);refresh();}
+    catch(e){toast(e.message,"error");setErr(e.message);}
+  }try{await create({...f,rating:+f.rating});setShow(false);refresh();}catch(e){alert(e.message);}};
   return(
     <div className="page-fade">
       <PageHeader title={`Vendors (${items.length})`} action={<button className="erp-btn erp-btn-primary" onClick={()=>setShow(true)}>+ New Vendor</button>}/>
@@ -1894,13 +2063,18 @@ function VendorsPage(){
 function UsersPage(){
   const [show,setShow]=useState(false);
   const {items,loading,refresh}=useCollection("users",{sort:"-created",perPage:200});
+  const toast=useToast();
   const [f,setF]=useState({email:"",password:"",name:"",phone:"",role:"sales_exec",branch:"NDLH",status:"active"});
   const [saving,setSaving]=useState(false);
   const save=async()=>{
     if(!f.email||!f.password||!f.name){alert("Email, password and name required");return;}
     setSaving(true);
-    try{await pb.collection("users").create({...f,passwordConfirm:f.password,emailVisibility:true});setShow(false);setF({email:"",password:"",name:"",phone:"",role:"sales_exec",branch:"NDLH",status:"active"});refresh();}
-    catch(e){alert(e.message||"Failed to create user");}
+    try{
+      const perms=ROLE_DEFAULT_PERMISSIONS[f.role]||{};
+      await pb.collection("users").create({...f,passwordConfirm:f.password,emailVisibility:true,permissions:perms});
+      toast("User created successfully!","success");
+      setShow(false);setF({email:"",password:"",name:"",phone:"",role:"sales_exec",branch:"NDLH",status:"active"});refresh();
+    }catch(e){toast(e.message||"Failed","error");}
     finally{setSaving(false);}
   };
   return(
@@ -1936,12 +2110,13 @@ function UsersPage(){
 
 // ── SETTINGS ──────────────────────────────────────────────────────────────────
 function SettingsPage(){
+  const toast=useToast();
   const {settings,saveSetting}=useAppAuth();
   const co=settings?.company||{};
   const [f,setF]=useState({name:"",gst:"",address:"",phone:"",email:"",website:""});
   const [saved,setSaved]=useState(false);
   useEffect(()=>{if(co.name)setF({name:co.name||"",gst:co.gst||"",address:co.address||"",phone:co.phone||"",email:co.email||"",website:co.website||""});},[settings]);
-  const save=async()=>{await saveSetting("company",f,"company");setSaved(true);setTimeout(()=>setSaved(false),2500);};
+  const save=async()=>{await saveSetting("company",f,"company");toast("Settings saved!","success");setSaved(true);setTimeout(()=>setSaved(false),2500);};
   return(
     <div className="page-fade">
       <PageHeader title="Settings"/>
