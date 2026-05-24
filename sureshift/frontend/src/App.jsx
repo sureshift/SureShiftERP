@@ -1735,8 +1735,6 @@ function EnquiriesPage(){
     setFerr({});setErr("");
     try{await create(f);toast("Enquiry created!","success");setShow(false);setF(initF);refresh();}
     catch(e){toast(e.message||"Failed","error");setErr(e.message);}
-  }
-    try{await create(f);setShow(false);setF({...f,name:"",phone:"",email:"",alt_phone:"",from_address:"",to_address:"",apt_size:"",move_date:"",notes:""});refresh();}catch(e){alert(e.message);}
   };
   return(
     <div className="page-fade">
