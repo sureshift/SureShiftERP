@@ -2020,7 +2020,7 @@ function VendorsPage(){
     setFerr({});setErr("");
     try{await create({...f,rating:+f.rating});toast("Vendor added!","success");setShow(false);setF(init);refresh();}
     catch(e){toast(e.message,"error");setErr(e.message);}
-  }try{await create({...f,rating:+f.rating});setShow(false);refresh();}catch(e){alert(e.message);}};
+  };
   return(
     <div className="page-fade">
       <PageHeader title={`Vendors (${items.length})`} action={<button className="erp-btn erp-btn-primary" onClick={()=>setShow(true)}>+ New Vendor</button>}/>
