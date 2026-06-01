@@ -89,7 +89,8 @@ function ToastContainer({ toasts, remove }) {
 const V = {
   required:  v => (!v || !String(v).trim()) ? "This field is required" : null,
   email:     v => v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? "Enter a valid email address" : null,
-  phone:     v => v && !/^[+]?[\d\s\-().]{8,15}$/.test(v) ? "Enter a valid phone number" : null,
+  phone:     v => v && !/^[0-9]{10}$/.test(v.replace(/\s/g,'')) ? "Enter a valid 10-digit mobile number" : null,
+  phone10:   v => !v || !/^[0-9]{10}$/.test(v.replace(/\s/g,'')) ? "10-digit mobile number required" : null,
   minLen:    n => v => v && v.length < n ? `Minimum ${n} characters required` : null,
   numeric:   v => v && isNaN(Number(v)) ? "Must be a number" : null,
   positive:  v => v && Number(v) < 0 ? "Must be a positive number" : null,
@@ -469,23 +470,45 @@ function Login() {
     finally { setBusy(false); }
   };
 
+  const [sfErr, setSfErr] = useState({});
+
   const handleSignup = async (e) => {
     e?.preventDefault();
-    const { name, email, phone, company, partnerType } = sf;
-    if (!name || !email || !phone || !company || !partnerType) {
-      setMsg({type:"error",text:"All fields are required to complete registration."}); return;
-    }
+    // Realtime validation
+    const errs = {};
+    if (!sf.name?.trim())    errs.name    = "Full name is required";
+    if (!sf.email?.trim())   errs.email   = "Email address is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sf.email)) errs.email = "Enter a valid email address";
+    if (!sf.phone?.trim())   errs.phone   = "Phone number is required";
+    else if (!/^[0-9]{10}$/.test(sf.phone.replace(/\s/g,''))) errs.phone = "Enter a valid 10-digit mobile number";
+    if (!sf.company?.trim()) errs.company = "Company / firm name is required";
+    if (!sf.partnerType)     errs.partnerType = "Please select a partner type";
+    if (Object.keys(errs).length) { setSfErr(errs); return; }
+    setSfErr({});
     setBusy(true); setMsg(null);
     try {
+      // Duplicate email check
+      const existing = await pb.collection("partner_requests").getList(1, 1, {
+        filter: 'email="' + sf.email.trim().toLowerCase() + '"',
+      });
+      if (existing.totalItems > 0) {
+        setSfErr({ email: "This email already has a pending request. Our team will contact you soon." });
+        setBusy(false); return;
+      }
       await pb.collection("partner_requests").create({
-        name, email:email.trim().toLowerCase(), phone, company,
-        partner_type:partnerType, status:"pending",
-        submitted_at:new Date().toISOString(),
+        name: sf.name.trim(),
+        email: sf.email.trim().toLowerCase(),
+        phone: sf.phone.replace(/\s/g,''),
+        company: sf.company.trim(),
+        partner_type: sf.partnerType,
+        status: "pending",
+        submitted_at: new Date().toISOString(),
       });
       setSf(INIT_SF);
-      setMsg({type:"success",text:`Registration submitted! Your account will be activated within 24 hours. We'll send credentials to ${email}.`});
+      setMsg({type:"success",text:"Registration submitted! Your account will be activated within 24 hours. We will send credentials to your email."});
     } catch (err) {
-      setMsg({type:"error",text:err?.response?.data?.email?.message||err.message||"Submission failed."});
+      const errMsg = err?.response?.data?.email?.message || err.message || "Submission failed. Please try again.";
+      setMsg({type:"error",text:errMsg});
     } finally { setBusy(false); }
   };
 
@@ -824,30 +847,30 @@ function Login() {
                       <label className="lbl">Full name</label>
                       <div style={{position:"relative"}}>
                         <input className="inp" placeholder="Your full name" value={sf.name} autoFocus
-                          onChange={e=>{setSf({...sf,name:e.target.value});setMsg(null);}}
+                          onChange={e=>{setSf({...sf,name:e.target.value});setMsg(null);if(sfErr.name)setSfErr(p=>({...p,name:undefined}));}}
                           onFocus={()=>setFf("s-name")} onBlur={()=>setFf(null)}
-                          style={{paddingLeft:36}}/>
+                          style={{paddingLeft:36,borderColor:sfErr.name?"#FCA5A5":""}}/>
                         <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ic("s-name")} strokeWidth="1.8" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                      </div>
+                      </div>{sfErr.name&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:4}}>{sfErr.name}</p>}
                     </div>
                     <div>
                       <label className="lbl">Phone number</label>
                       <div style={{position:"relative"}}>
-                        <input className="inp" placeholder="+91 9XXXXXXXXX" type="tel" value={sf.phone}
-                          onChange={e=>{setSf({...sf,phone:e.target.value});setMsg(null);}}
+                        <input className="inp" placeholder="9XXXXXXXXX" type="tel" value={sf.phone}
+                          onChange={e=>{setSf({...sf,phone:e.target.value.replace(/[^0-9]/g,"").slice(0,10)});setMsg(null);if(sfErr.phone)setSfErr(p=>({...p,phone:undefined}));}}
                           onFocus={()=>setFf("s-phone")} onBlur={()=>setFf(null)}
-                          style={{paddingLeft:36}}/>
+                          style={{paddingLeft:36,borderColor:sfErr.phone?"#FCA5A5":""}}/>
                         <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ic("s-phone")} strokeWidth="1.8" strokeLinecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81 19.79 19.79 0 01.24 2.18 2 2 0 012.21 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.72 6.72l1.28-1.29a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-                      </div>
+                      </div>{sfErr.phone&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:4}}>{sfErr.phone}</p>}
                     </div>
                   </div>
                   <div style={{marginBottom:12}}>
                     <label className="lbl">Business email</label>
                     <div style={{position:"relative"}}>
                       <input className="inp" placeholder="you@yourcompany.com" type="email" value={sf.email}
-                        onChange={e=>{setSf({...sf,email:e.target.value});setMsg(null);}}
+                        onChange={e=>{setSf({...sf,email:e.target.value});setMsg(null);if(sfErr.email)setSfErr(p=>({...p,email:undefined}));}}
                         onFocus={()=>setFf("s-email")} onBlur={()=>setFf(null)}
-                        style={{paddingLeft:36}}/>
+                        style={{paddingLeft:36,borderColor:sfErr.email?"#FCA5A5":""}}/>
                       <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ic("s-email")} strokeWidth="1.8" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     </div>
                   </div>
@@ -855,11 +878,11 @@ function Login() {
                     <label className="lbl">Company / Firm name</label>
                     <div style={{position:"relative"}}>
                       <input className="inp" placeholder="Your company or firm name" value={sf.company}
-                        onChange={e=>{setSf({...sf,company:e.target.value});setMsg(null);}}
+                        onChange={e=>{setSf({...sf,company:e.target.value});setMsg(null);if(sfErr.company)setSfErr(p=>({...p,company:undefined}));}}
                         onFocus={()=>setFf("s-company")} onBlur={()=>setFf(null)}
-                        style={{paddingLeft:36}}/>
+                        style={{paddingLeft:36,borderColor:sfErr.company?"#FCA5A5":""}}/>
                       <svg style={{position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke .15s"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ic("s-company")} strokeWidth="1.8" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                    </div>
+                    </div>{sfErr.company&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:4}}>{sfErr.company}</p>}
                   </div>
                   <div style={{marginBottom:18}}>
                     <label className="lbl">Partner type</label>
@@ -1764,8 +1787,8 @@ function EnquiriesPage(){
       {show&&<Modal title="New Enquiry" onClose={()=>setShow(false)} wide>
         <FormGrid>
           <Field label="Customer Name" req half><input className="erp-inp" value={f.name} onChange={e=>setF({...f,name:e.target.value})} placeholder="Full name"/></Field>
-          <Field label="Phone" req half><input className="erp-inp" value={f.phone} onChange={e=>setF({...f,phone:e.target.value})} placeholder="10-digit mobile"/></Field>
-          <Field label="Alt Phone" half><input className="erp-inp" value={f.alt_phone} onChange={e=>setF({...f,alt_phone:e.target.value})} placeholder="Optional"/></Field>
+          <Field label="Phone" req half><input className="erp-inp" value={f.phone} onChange={e=>setF({...f,phone:e.target.value.replace(/[^0-9]/g,"").slice(0,10)});} placeholder="9XXXXXXXXX" maxLength={10}/></Field>
+          <Field label="Alt Phone" half><input className="erp-inp" value={f.alt_phone} onChange={e=>setF({...f,alt_phone:e.target.value.replace(/[^0-9]/g,"").slice(0,10)})} placeholder="Optional" maxLength={10}/></Field>
           <Field label="Email" half><input className="erp-inp" type="email" value={f.email} onChange={e=>setF({...f,email:e.target.value})} placeholder="email@example.com"/></Field>
           <Field label="From Address" req half><input className="erp-inp" value={f.from_address} onChange={e=>setF({...f,from_address:e.target.value})} placeholder="Pickup address"/></Field>
           <Field label="To Address" req half><input className="erp-inp" value={f.to_address} onChange={e=>setF({...f,to_address:e.target.value})} placeholder="Drop address"/></Field>
@@ -2065,7 +2088,12 @@ function UsersPage(){
   const [f,setF]=useState({email:"",password:"",name:"",phone:"",role:"sales_exec",branch:"NDLH",status:"active"});
   const [saving,setSaving]=useState(false);
   const save=async()=>{
-    if(!f.email||!f.password||!f.name){alert("Email, password and name required");return;}
+    const uerrs = {};
+    if (!f.name?.trim())   uerrs.name  = "Name is required";
+    if (!f.email?.trim())  uerrs.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) uerrs.email = "Enter a valid email";
+    if (!f.password || f.password.length < 8) uerrs.password = "Password must be at least 8 characters";
+    if (Object.keys(uerrs).length) { setMsg(uerrs); return; }
     setSaving(true);
     try{
       const perms=ROLE_DEFAULT_PERMISSIONS[f.role]||{};
