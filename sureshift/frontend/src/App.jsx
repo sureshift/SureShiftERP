@@ -1787,7 +1787,7 @@ function EnquiriesPage(){
       {show&&<Modal title="New Enquiry" onClose={()=>setShow(false)} wide>
         <FormGrid>
           <Field label="Customer Name" req half><input className="erp-inp" value={f.name} onChange={e=>setF({...f,name:e.target.value})} placeholder="Full name"/></Field>
-          <Field label="Phone" req half><input className="erp-inp" value={f.phone} onChange={e=>setF({...f,phone:e.target.value.replace(/[^0-9]/g,"").slice(0,10)});} placeholder="9XXXXXXXXX" maxLength={10}/></Field>
+          <Field label="Phone" req half><input className="erp-inp" value={f.phone} onChange={e=>setF({...f,phone:e.target.value.replace(/[^0-9]/g,"").slice(0,10)})} placeholder="9XXXXXXXXX" maxLength={10}/></Field>
           <Field label="Alt Phone" half><input className="erp-inp" value={f.alt_phone} onChange={e=>setF({...f,alt_phone:e.target.value.replace(/[^0-9]/g,"").slice(0,10)})} placeholder="Optional" maxLength={10}/></Field>
           <Field label="Email" half><input className="erp-inp" type="email" value={f.email} onChange={e=>setF({...f,email:e.target.value})} placeholder="email@example.com"/></Field>
           <Field label="From Address" req half><input className="erp-inp" value={f.from_address} onChange={e=>setF({...f,from_address:e.target.value})} placeholder="Pickup address"/></Field>
