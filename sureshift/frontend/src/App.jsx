@@ -488,11 +488,19 @@ function Login() {
     setBusy(true); setMsg(null);
     try {
       // Duplicate email check
-      const existing = await pb.collection("partner_requests").getList(1, 1, {
+      const emailCheck = await pb.collection("partner_requests").getList(1, 1, {
         filter: 'email="' + sf.email.trim().toLowerCase() + '"',
       });
-      if (existing.totalItems > 0) {
-        setSfErr({ email: "This email already has a pending request. Our team will contact you soon." });
+      if (emailCheck.totalItems > 0) {
+        setSfErr({ email: "This email is already registered. Our team will contact you soon." });
+        setBusy(false); return;
+      }
+      // Duplicate phone check
+      const phoneCheck = await pb.collection("partner_requests").getList(1, 1, {
+        filter: 'phone="' + sf.phone.replace(/\s/g,"") + '"',
+      });
+      if (phoneCheck.totalItems > 0) {
+        setSfErr({ phone: "This phone number is already registered. Our team will contact you soon." });
         setBusy(false); return;
       }
       await pb.collection("partner_requests").create({
