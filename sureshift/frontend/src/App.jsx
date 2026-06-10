@@ -515,8 +515,15 @@ function Login() {
       setSf(INIT_SF);
       setMsg({type:"success",text:"Registration submitted! Your account will be activated within 24 hours. We will send credentials to your email."});
     } catch (err) {
-      const errMsg = err?.response?.data?.email?.message || err.message || "Submission failed. Please try again.";
-      setMsg({type:"error",text:errMsg});
+      // Handle PocketBase unique constraint errors
+      const data = err?.response?.data || {};
+      if (data.email?.code === "validation_not_unique") {
+        setSfErr({ email: "This email is already registered. Our team will contact you soon." });
+      } else if (data.phone?.code === "validation_not_unique") {
+        setSfErr({ phone: "This phone number is already registered. Our team will contact you soon." });
+      } else {
+        setMsg({type:"error",text:err?.message || "Submission failed. Please try again."});
+      }
     } finally { setBusy(false); }
   };
 
