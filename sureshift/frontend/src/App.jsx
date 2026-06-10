@@ -487,20 +487,22 @@ function Login() {
     setSfErr({});
     setBusy(true); setMsg(null);
     try {
-      // Duplicate email check
-      const emailCheck = await pb.collection("partner_requests").getList(1, 1, {
-        filter: 'email="' + sf.email.trim().toLowerCase() + '"',
-      });
-      if (emailCheck.totalItems > 0) {
-        setSfErr({ email: "This email is already registered. Our team will contact you soon." });
-        setBusy(false); return;
-      }
-      // Duplicate phone check
-      const phoneCheck = await pb.collection("partner_requests").getList(1, 1, {
-        filter: 'phone="' + sf.phone.replace(/\s/g,"") + '"',
-      });
-      if (phoneCheck.totalItems > 0) {
-        setSfErr({ phone: "This phone number is already registered. Our team will contact you soon." });
+      // Run both duplicate checks in parallel
+      const [emailCheck, phoneCheck] = await Promise.all([
+        pb.collection("partner_requests").getList(1, 1, {
+          filter: 'email="' + sf.email.trim().toLowerCase() + '"',
+        }),
+        pb.collection("partner_requests").getList(1, 1, {
+          filter: 'phone="' + sf.phone.replace(/\s/g,"") + '"',
+        }),
+      ]);
+      const dupErrs = {};
+      if (emailCheck.totalItems > 0)
+        dupErrs.email = "This email is already registered. Our team will contact you soon.";
+      if (phoneCheck.totalItems > 0)
+        dupErrs.phone = "This phone number is already registered. Our team will contact you soon.";
+      if (Object.keys(dupErrs).length) {
+        setSfErr(dupErrs);
         setBusy(false); return;
       }
       await pb.collection("partner_requests").create({
