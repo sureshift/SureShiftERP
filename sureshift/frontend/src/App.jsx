@@ -2977,7 +2977,7 @@ function AdminUsersPage() {
                         <span style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:700,color:u.status==="active"?"#059669":"#DC2626",background:u.status==="active"?"rgba(5,150,105,.1)":"rgba(220,38,38,.1)",padding:"3px 10px",borderRadius:99,textTransform:"capitalize"}}>{u.status||"active"}</span>
                       </td>
                       <td style={{padding:"11px 14px"}}>
-                        <div style={{display:"flex",gap:6",flexWrap:"nowrap"}}>
+                        <div style={{display:"flex",gap:6,flexWrap:"nowrap"}}>
                           <button onClick={()=>{setF({name:u.name,email:u.email,phone:u.phone||"",role:u.role,branch:u.branch||"NDLH",status:u.status||"active"});setFerr({});setEditing(u);}} style={{padding:"5px 10px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:7,fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:600,cursor:"pointer"}}>Edit</button>
                           <button onClick={()=>setPermUser(u)} style={{padding:"5px 10px",background:"rgba(37,99,235,.08)",color:"#2563EB",border:"none",borderRadius:7,fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:600,cursor:"pointer"}}>Perms</button>
                           <button onClick={()=>toggleStatus(u)} style={{padding:"5px 10px",background:u.status==="active"?"rgba(220,38,38,.07)":"rgba(5,150,105,.07)",color:u.status==="active"?"#DC2626":"#059669",border:"none",borderRadius:7,fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:600,cursor:"pointer"}}>{u.status==="active"?"Deactivate":"Activate"}</button>
