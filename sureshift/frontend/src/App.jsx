@@ -574,6 +574,15 @@ function Login() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes quoteIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulseDot{0%,100%{opacity:.5}50%{opacity:1}}
+      .erp-inp{width:100%;padding:10px 13px;border:1.5px solid #E2E8F0;border-radius:9px;font:400 13.5px/1.2 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff;transition:border-color .18s;box-sizing:border-box}
+      .erp-inp:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
+      .erp-inp::placeholder{color:#CBD5E1}
+      .erp-sel{appearance:none;width:100%;padding:10px 36px 10px 13px;border:1.5px solid #E2E8F0;border-radius:9px;font:400 13.5px/1 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.7'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E") no-repeat right 12px center;cursor:pointer;box-sizing:border-box;transition:border-color .18s}
+      .erp-sel:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
+      .erp-btn{padding:9px 18px;border-radius:9px;border:none;cursor:pointer;font:600 13px 'Inter',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+      .erp-btn-primary{background:#DB2648;color:#fff}
+      .erp-btn-primary:hover{background:#B91C3C;transform:translateY(-1px)}
+      .page-fade{animation:fadeUp .18s ease}
         @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
         .aw{display:grid;grid-template-columns:1.05fr 1fr;width:100%;max-width:1040px;min-height:640px;border-radius:22px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.18)}
         .al{background:#DB2648;padding:50px 44px;display:flex;flex-direction:column;position:relative;overflow:hidden}
@@ -933,6 +942,31 @@ function Login() {
   );
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  NAV CONFIG
+// ─────────────────────────────────────────────────────────────────────────────
+const NAV = [
+  { id:"dashboard",        label:"Dashboard",       icon:"◼", roles:["*"] },
+  { id:"partner_requests", label:"Partner Requests", icon:"🤝", roles:["super_admin","branch_head"] },
+  { id:"enquiries",        label:"Enquiries",        icon:"📥", roles:["super_admin","branch_head","sales_exec"] },
+  { id:"surveys",          label:"Surveys",          icon:"📋", roles:["super_admin","branch_head","surveyor","sales_exec"] },
+  { id:"quotations",       label:"Quotations",       icon:"📄", roles:["super_admin","branch_head","sales_exec","finance_exec"] },
+  { id:"bookings",         label:"Bookings / CFR",   icon:"📦", roles:["super_admin","branch_head","ops_exec","finance_exec"] },
+  { id:"operations",       label:"Operations",       icon:"🚛", roles:["super_admin","branch_head","ops_exec"] },
+  { id:"invoices",         label:"Invoices",         icon:"💳", roles:["super_admin","branch_head","finance_exec"] },
+  { id:"vendors",          label:"Vendors",          icon:"🏭", roles:["super_admin","branch_head","ops_exec"] },
+  { id:"users",            label:"Users",            icon:"👥", roles:["super_admin"] },
+  { id:"settings",         label:"Settings",         icon:"⚙️",  roles:["super_admin"] },
+];
+
+
+function PendingBadge() {
+  const { items } = useCollection("partner_requests", { filter:'status="pending"', perPage:1 });
+  if (!items.length) return null;
+  return <span style={{background:"#DB2648",color:"#fff",borderRadius:99,fontSize:9,fontWeight:700,padding:"1px 6px",marginLeft:"auto",flexShrink:0}}>!</span>;
+}
+
 function Shell() {
   const {user,logout}=useAppAuth();
   const [nav,setNav]=useState("dashboard");
@@ -998,16 +1032,17 @@ function Shell() {
 
         {/* Page */}
         <div style={{flex:1,overflow:"auto",padding:24}}>
-          {nav==="dashboard"  && <DashboardPage/>}
-          {nav==="enquiries"  && <EnquiriesPage/>}
-          {nav==="surveys"    && <SurveysPage/>}
-          {nav==="quotations" && <QuotationsPage/>}
-          {nav==="bookings"   && <BookingsPage/>}
-          {nav==="operations" && <OperationsPage/>}
-          {nav==="invoices"   && <InvoicesPage/>}
-          {nav==="vendors"    && <VendorsPage/>}
-          {nav==="users"      && <UsersPage/>}
-          {nav==="settings"   && <SettingsPage/>}
+          {nav==="dashboard"        && <DashboardPage/>}
+          {nav==="partner_requests" && <PartnerRequestsPage/>}
+          {nav==="enquiries"        && (user?.role==="super_admin"?<AdminEnquiriesPage/>:<EnquiriesPage/>)}
+          {nav==="surveys"          && <SurveysPage/>}
+          {nav==="quotations"       && <QuotationsPage/>}
+          {nav==="bookings"         && <BookingsPage/>}
+          {nav==="operations"       && <OperationsPage/>}
+          {nav==="invoices"         && <InvoicesPage/>}
+          {nav==="vendors"          && <VendorsPage/>}
+          {nav==="users"            && (user?.role==="super_admin"?<AdminUsersPage/>:<UsersPage/>)}
+          {nav==="settings"         && <SettingsPage/>}
         </div>
       </div>
     </div>
@@ -2182,3 +2217,838 @@ function SettingsPage(){
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PERMISSIONS MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+const MODULE_PERMISSIONS = {
+  enquiries:  { label:"Enquiries",  icon:"📥", actions:["view","create","edit","delete","assign","stage_change"] },
+  surveys:    { label:"Surveys",    icon:"📋", actions:["view","create","edit","assign","report"] },
+  quotations: { label:"Quotations", icon:"📄", actions:["view","create","edit","send","approve","revise"] },
+  bookings:   { label:"Bookings",   icon:"📦", actions:["view","create","edit","cancel","payment"] },
+  operations: { label:"Operations", icon:"🚛", actions:["view","update","dispatch","checklist"] },
+  invoices:   { label:"Invoices",   icon:"💳", actions:["view","create","edit","send","payment","cancel"] },
+  vendors:    { label:"Vendors",    icon:"🏭", actions:["view","create","edit","delete"] },
+  users:      { label:"Users",      icon:"👥", actions:["view","create","edit","delete","assign_roles"] },
+  reports:    { label:"Reports",    icon:"📊", actions:["view","export"] },
+  settings:   { label:"Settings",  icon:"⚙️",  actions:["view","edit"] },
+};
+
+function PermissionsModal({ user, onClose, onDone }) {
+  const { update, loading:saving } = useMutation("users");
+  const [perms, setPerms] = useState(() => {
+    if (user.permissions && Object.keys(user.permissions).length > 0)
+      return JSON.parse(JSON.stringify(user.permissions));
+    return Object.fromEntries(Object.entries(MODULE_PERMISSIONS).map(([k,v])=>[k,[]]));
+  });
+
+  const toggle = (mod, action) => {
+    setPerms(prev => {
+      const next = { ...prev, [mod]: [...(prev[mod]||[])] };
+      if (next[mod].includes(action)) next[mod] = next[mod].filter(a=>a!==action);
+      else next[mod] = [...next[mod], action];
+      return next;
+    });
+  };
+
+  const toggleAll = (mod, actions) => {
+    setPerms(prev => {
+      const allOn = actions.every(a=>(prev[mod]||[]).includes(a));
+      return { ...prev, [mod]: allOn ? [] : [...actions] };
+    });
+  };
+
+  const save = async () => {
+    try { await update(user.id, { permissions: perms }); onDone(); }
+    catch(e) { alert(e.message); }
+  };
+
+  return (
+    <AdminModal title={`Permissions — ${user.name}`} onClose={onClose} width={660}>
+      <div style={{maxHeight:420,overflowY:"auto",display:"flex",flexDirection:"column",gap:8,paddingRight:4}}>
+        {Object.entries(MODULE_PERMISSIONS).map(([mod,{label,icon,actions}])=>{
+          const mp = perms[mod]||[];
+          const allOn = actions.every(a=>mp.includes(a));
+          const someOn = actions.some(a=>mp.includes(a)) && !allOn;
+          return (
+            <div key={mod} style={{border:"1.5px solid #E2E8F0",borderRadius:10,overflow:"hidden"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:allOn?"rgba(219,38,72,.03)":"#FAFAFA",cursor:"pointer"}} onClick={()=>toggleAll(mod,actions)}>
+                <input type="checkbox" checked={allOn} ref={el=>{if(el)el.indeterminate=someOn;}} onChange={()=>toggleAll(mod,actions)} onClick={e=>e.stopPropagation()} style={{accentColor:"#DB2648",width:14,height:14}}/>
+                <span style={{fontSize:14}}>{icon}</span>
+                <span style={{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:700,color:"#0F172A",flex:1}}>{label}</span>
+                <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,color:"#94A3B8"}}>{mp.length}/{actions.length} allowed</span>
+              </div>
+              <div style={{display:"flex",flexWrap:"wrap",padding:"8px 14px 10px",borderTop:"1px solid #F1F5F9",gap:0}}>
+                {actions.map(action=>{
+                  const on = mp.includes(action);
+                  return (
+                    <label key={action} style={{display:"flex",alignItems:"center",gap:6,marginRight:16,marginBottom:6,cursor:"pointer"}}>
+                      <input type="checkbox" checked={on} onChange={()=>toggle(mod,action)} style={{accentColor:"#DB2648",width:13,height:13}}/>
+                      <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:on?"#0F172A":"#94A3B8",fontWeight:on?600:400,textTransform:"capitalize"}}>{action.replace("_"," ")}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{marginTop:14,padding:"10px 14px",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:9}}>
+        <p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#92400E"}}>⚠️ Super Admin always has full access regardless of permissions. Changes take effect on next login.</p>
+      </div>
+      <div style={{display:"flex",gap:10,justifyContent:"flex-end",paddingTop:16,borderTop:"1px solid #F1F5F9",marginTop:14}}>
+        <button onClick={onClose} style={{padding:"9px 20px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+        <button onClick={save} disabled={saving} style={{padding:"9px 24px",background:"#DB2648",color:"#fff",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",opacity:saving?.7:1}}>{saving?"Saving…":"Save Permissions"}</button>
+      </div>
+    </AdminModal>
+  );
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  NAV CONFIG (role-aware)
+// ─────────────────────────────────────────────────────────────────────────────
+const NAV = [
+  { id:"dashboard",        label:"Dashboard",        icon:"◼", roles:["*"] },
+  { id:"partner_requests", label:"Partner Requests",  icon:"🤝", roles:["super_admin","branch_head"] },
+  { id:"enquiries",        label:"Enquiries",         icon:"📥", roles:["super_admin","branch_head","sales_exec"] },
+  { id:"surveys",          label:"Surveys",           icon:"📋", roles:["super_admin","branch_head","surveyor","sales_exec"] },
+  { id:"quotations",       label:"Quotations",        icon:"📄", roles:["super_admin","branch_head","sales_exec","finance_exec"] },
+  { id:"bookings",         label:"Bookings / CFR",    icon:"📦", roles:["super_admin","branch_head","ops_exec","finance_exec"] },
+  { id:"operations",       label:"Operations",        icon:"🚛", roles:["super_admin","branch_head","ops_exec"] },
+  { id:"invoices",         label:"Invoices",          icon:"💳", roles:["super_admin","branch_head","finance_exec"] },
+  { id:"vendors",          label:"Vendors",           icon:"🏭", roles:["super_admin","branch_head","ops_exec"] },
+  { id:"users",            label:"Users",             icon:"👥", roles:["super_admin"] },
+  { id:"settings",         label:"Settings",          icon:"⚙️",  roles:["super_admin"] },
+];
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PARTNER REQUESTS PAGE — Super Admin
+// ─────────────────────────────────────────────────────────────────────────────
+function PartnerRequestsPage() {
+  const toast = useToast();
+  const { items, loading, refresh } = useCollection("partner_requests", { sort:"-created", perPage:200, realtime:true });
+  const { update } = useMutation("partner_requests");
+  const [filter, setFilter] = useState("pending");
+  const [search, setSearch] = useState("");
+  const [viewing, setViewing] = useState(null);
+  const [processing, setProcessing] = useState(null);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const filtered = items.filter(r => {
+    const q = search.toLowerCase();
+    const matchSearch = !q || r.name?.toLowerCase().includes(q) || r.email?.toLowerCase().includes(q) || r.phone?.includes(q) || r.company?.toLowerCase().includes(q);
+    const matchFilter = !filter || r.status === filter;
+    return matchSearch && matchFilter;
+  });
+
+  const counts = {
+    all:      items.length,
+    pending:  items.filter(r=>r.status==="pending").length,
+    approved: items.filter(r=>r.status==="approved").length,
+    rejected: items.filter(r=>r.status==="rejected").length,
+  };
+
+  const handleAction = async (record, status) => {
+    setBusy(true);
+    try {
+      await update(record.id, { status, admin_notes: note });
+      toast(`Request ${status} successfully!`, "success");
+      setProcessing(null); setNote(""); refresh();
+    } catch(e) {
+      toast(e.message || "Action failed", "error");
+    } finally { setBusy(false); }
+  };
+
+  const PT_ICONS = { vehicle:"🚛", manpower:"👷", material:"📦", business:"🤝" };
+  const STATUS_COLORS = { pending:"#D97706", approved:"#059669", rejected:"#DC2626", on_hold:"#7C3AED" };
+
+  return (
+    <div style={{animation:"fadeUp .18s ease"}}>
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:12}}>
+        <div>
+          <h2 style={{fontFamily:"'Poppins',sans-serif",fontSize:18,fontWeight:700,color:"#0F172A",marginBottom:3}}>Partner Requests</h2>
+          <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"#64748B"}}>Review and approve partner registrations from the signup form.</p>
+        </div>
+        <input className="erp-inp" style={{width:240}} placeholder="Search name, email, phone…" value={search} onChange={e=>setSearch(e.target.value)}/>
+      </div>
+
+      {/* Status filter tabs */}
+      <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
+        {[
+          {k:"",      l:"All",      c:"#475569"},
+          {k:"pending",  l:"Pending",  c:"#D97706"},
+          {k:"approved", l:"Approved", c:"#059669"},
+          {k:"rejected", l:"Rejected", c:"#DC2626"},
+        ].map(({k,l,c})=>(
+          <button key={k} onClick={()=>setFilter(k)} style={{padding:"7px 16px",borderRadius:99,border:`1.5px solid ${filter===k?c:"#E2E8F0"}`,background:filter===k?`${c}12`:"#fff",color:filter===k?c:"#64748B",fontFamily:"'Inter',sans-serif",fontSize:12.5,fontWeight:600,cursor:"pointer",transition:"all .15s",display:"flex",alignItems:"center",gap:6}}>
+            {l}
+            <span style={{background:filter===k?c:"#F1F5F9",color:filter===k?"#fff":"#64748B",borderRadius:99,padding:"1px 7px",fontSize:11,fontWeight:700}}>{k?counts[k]:counts.all}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Requests grid */}
+      {loading ? (
+        <div style={{display:"flex",justifyContent:"center",padding:56}}><div style={{width:28,height:28,border:"3px solid rgba(219,38,72,.15)",borderTopColor:"#DB2648",borderRadius:"50%",animation:"spin .75s linear infinite"}}/></div>
+      ) : filtered.length === 0 ? (
+        <div style={{textAlign:"center",padding:"56px 20px",background:"#fff",borderRadius:14,border:"1px solid #F1F5F9"}}>
+          <div style={{fontSize:36,marginBottom:12}}>🤝</div>
+          <div style={{fontFamily:"'Poppins',sans-serif",fontSize:15,fontWeight:600,color:"#64748B"}}>No partner requests found</div>
+          <div style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"#94A3B8",marginTop:6}}>New partner requests from the signup form will appear here.</div>
+        </div>
+      ) : (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(360px,1fr))",gap:14}}>
+          {filtered.map(r=>{
+            const sc = STATUS_COLORS[r.status]||"#94A3B8";
+            return (
+              <div key={r.id} style={{background:"#fff",borderRadius:14,border:`1px solid ${r.status==="pending"?"#FDE68A":"#F1F5F9"}`,padding:"18px 20px",boxShadow:"0 1px 4px rgba(15,23,42,.04)",transition:"box-shadow .15s"}}
+                onMouseEnter={e=>e.currentTarget.style.boxShadow="0 4px 16px rgba(15,23,42,.08)"}
+                onMouseLeave={e=>e.currentTarget.style.boxShadow="0 1px 4px rgba(15,23,42,.04)"}>
+
+                {/* Card header */}
+                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{width:40,height:40,borderRadius:10,background:`${sc}12`,border:`1.5px solid ${sc}25`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>
+                      {PT_ICONS[r.partner_type]||"🤝"}
+                    </div>
+                    <div>
+                      <div style={{fontFamily:"'Poppins',sans-serif",fontSize:14,fontWeight:700,color:"#0F172A"}}>{r.name}</div>
+                      <div style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#64748B"}}>{r.company}</div>
+                    </div>
+                  </div>
+                  <span style={{fontFamily:"'Inter',sans-serif",fontSize:10.5,fontWeight:700,color:sc,background:`${sc}12`,padding:"3px 10px",borderRadius:99,textTransform:"capitalize",border:`1px solid ${sc}25`}}>{r.status}</span>
+                </div>
+
+                {/* Details */}
+                <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:14}}>
+                  {[
+                    {icon:"📧", val:r.email},
+                    {icon:"📱", val:r.phone},
+                    {icon:"🏷️", val:r.partner_type?.replace("_"," ")},
+                    {icon:"🕐", val:r.submitted_at?new Date(r.submitted_at).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}):"—"},
+                  ].map(({icon,val})=>(
+                    <div key={icon} style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{fontSize:12,width:16,flexShrink:0}}>{icon}</span>
+                      <span style={{fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"#374151"}}>{val||"—"}</span>
+                    </div>
+                  ))}
+                  {r.admin_notes&&(
+                    <div style={{marginTop:4,padding:"8px 10px",background:"#F8FAFC",borderRadius:7,border:"1px solid #E2E8F0"}}>
+                      <div style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#64748B",marginBottom:2}}>ADMIN NOTE</div>
+                      <div style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#374151"}}>{r.admin_notes}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                {r.status==="pending" && (
+                  <div style={{display:"flex",gap:8,paddingTop:12,borderTop:"1px solid #F1F5F9"}}>
+                    <button onClick={()=>{setProcessing({...r,action:"approved"});setNote("");}} style={{flex:1,padding:"8px",background:"rgba(5,150,105,.1)",color:"#059669",border:"1.5px solid rgba(5,150,105,.25)",borderRadius:8,fontFamily:"'Inter',sans-serif",fontSize:12.5,fontWeight:600,cursor:"pointer",transition:"all .15s"}}
+                      onMouseEnter={e=>{e.currentTarget.style.background="rgba(5,150,105,.18)"}}
+                      onMouseLeave={e=>{e.currentTarget.style.background="rgba(5,150,105,.1)"}}>
+                      ✓ Approve
+                    </button>
+                    <button onClick={()=>{setViewing(r);}} style={{padding:"8px 12px",background:"rgba(15,23,42,.05)",color:"#475569",border:"1px solid #E2E8F0",borderRadius:8,fontFamily:"'Inter',sans-serif",fontSize:12.5,fontWeight:600,cursor:"pointer",transition:"all .15s"}}>
+                      View
+                    </button>
+                    <button onClick={()=>{setProcessing({...r,action:"rejected"});setNote("");}} style={{padding:"8px 12px",background:"rgba(220,38,38,.08)",color:"#DC2626",border:"1.5px solid rgba(220,38,38,.2)",borderRadius:8,fontFamily:"'Inter',sans-serif",fontSize:12.5,fontWeight:600,cursor:"pointer",transition:"all .15s"}}
+                      onMouseEnter={e=>{e.currentTarget.style.background="rgba(220,38,38,.15)"}}
+                      onMouseLeave={e=>{e.currentTarget.style.background="rgba(220,38,38,.08)"}}>
+                      ✗ Reject
+                    </button>
+                  </div>
+                )}
+                {r.status!=="pending" && (
+                  <div style={{paddingTop:10,borderTop:"1px solid #F1F5F9",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <span style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#94A3B8"}}>Updated {r.updated?new Date(r.updated).toLocaleDateString("en-IN"):"—"}</span>
+                    <button onClick={()=>setViewing(r)} style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#DB2648",background:"none",border:"none",cursor:"pointer",fontWeight:600}}>View details</button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* View Modal */}
+      {viewing && (
+        <AdminModal title="Partner Request Details" onClose={()=>setViewing(null)}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
+            {[
+              {l:"Full Name",    v:viewing.name},
+              {l:"Company",      v:viewing.company},
+              {l:"Email",        v:viewing.email},
+              {l:"Phone",        v:viewing.phone},
+              {l:"Partner Type", v:viewing.partner_type?.replace("_"," ")},
+              {l:"Status",       v:viewing.status},
+              {l:"Submitted",    v:viewing.submitted_at?new Date(viewing.submitted_at).toLocaleString("en-IN"):"—"},
+              {l:"Admin Notes",  v:viewing.admin_notes||"—"},
+            ].map(({l,v})=>(
+              <div key={l} style={{padding:"10px 12px",background:"#F8FAFC",borderRadius:9,border:"1px solid #F1F5F9"}}>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:10,fontWeight:700,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".5px",marginBottom:4}}>{l}</div>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#0F172A",fontWeight:500,textTransform:"capitalize"}}>{v}</div>
+              </div>
+            ))}
+          </div>
+          {viewing.status==="pending" && (
+            <div>
+              <div style={{marginBottom:8,fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:".5px"}}>Admin Note (optional)</div>
+              <textarea className="erp-inp" rows={2} value={note} onChange={e=>setNote(e.target.value)} placeholder="Add a note for this decision…" style={{resize:"vertical",marginBottom:14}}/>
+              <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+                <button onClick={()=>handleAction(viewing,"rejected")} disabled={busy} style={{padding:"9px 18px",background:"rgba(220,38,38,.1)",color:"#DC2626",border:"1.5px solid rgba(220,38,38,.25)",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>
+                  ✗ Reject Request
+                </button>
+                <button onClick={()=>handleAction(viewing,"approved")} disabled={busy} style={{padding:"9px 18px",background:"#059669",color:"#fff",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",opacity:busy?.6:1}}>
+                  {busy?"Processing…":"✓ Approve Request"}
+                </button>
+              </div>
+            </div>
+          )}
+        </AdminModal>
+      )}
+
+      {/* Approve/Reject confirmation modal */}
+      {processing && (
+        <AdminModal title={processing.action==="approved"?"Approve Partner Request":"Reject Partner Request"} onClose={()=>setProcessing(null)}>
+          <div style={{marginBottom:16,padding:"14px 16px",background:processing.action==="approved"?"rgba(5,150,105,.06)":"rgba(220,38,38,.06)",borderRadius:10,border:`1px solid ${processing.action==="approved"?"rgba(5,150,105,.2)":"rgba(220,38,38,.2)"}`}}>
+            <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#0F172A",lineHeight:1.6}}>
+              You are about to <strong>{processing.action}</strong> the request from <strong>{processing.name}</strong> ({processing.email}).
+            </p>
+          </div>
+          <div style={{marginBottom:14}}>
+            <div style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:6}}>Add a note (optional)</div>
+            <textarea className="erp-inp" rows={3} value={note} onChange={e=>setNote(e.target.value)} placeholder={processing.action==="approved"?"e.g. Verified documents, account will be created…":"e.g. Incomplete details, please reapply…"} style={{resize:"vertical"}}/>
+          </div>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end",paddingTop:14,borderTop:"1px solid #F1F5F9"}}>
+            <button onClick={()=>setProcessing(null)} style={{padding:"9px 18px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+            <button onClick={()=>handleAction(processing,processing.action)} disabled={busy} style={{padding:"9px 20px",background:processing.action==="approved"?"#059669":"#DC2626",color:"#fff",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",opacity:busy?.6:1}}>
+              {busy?"Processing…":processing.action==="approved"?"Confirm Approval":"Confirm Rejection"}
+            </button>
+          </div>
+        </AdminModal>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  ADMIN MODAL (clean, reusable)
+// ─────────────────────────────────────────────────────────────────────────────
+function AdminModal({ title, onClose, children, width=520 }) {
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20,backdropFilter:"blur(4px)"}}
+      onClick={e=>{ if(e.target===e.currentTarget) onClose(); }}>
+      <div style={{background:"#fff",borderRadius:18,width:"100%",maxWidth:width,maxHeight:"90vh",overflow:"auto",boxShadow:"0 32px 80px rgba(0,0,0,.25)",animation:"fadeUp .2s ease"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 24px",borderBottom:"1px solid #F1F5F9"}}>
+          <h3 style={{fontFamily:"'Poppins',sans-serif",fontSize:16,fontWeight:700,color:"#0F172A",margin:0}}>{title}</h3>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:"#94A3B8",fontSize:22,lineHeight:1,padding:"2px 6px",borderRadius:6,transition:"background .15s"}}
+            onMouseEnter={e=>e.target.style.background="#F1F5F9"} onMouseLeave={e=>e.target.style.background="none"}>×</button>
+        </div>
+        <div style={{padding:"20px 24px"}}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  ADMIN ENQUIRIES — full CRUD with stage management
+// ─────────────────────────────────────────────────────────────────────────────
+function AdminEnquiriesPage() {
+  const toast = useToast();
+  const { user } = useAppAuth();
+  const [showCreate, setShowCreate] = useState(false);
+  const [editing,    setEditing]    = useState(null);
+  const [deleting,   setDeleting]   = useState(null);
+  const [q, setQ] = useState(""); const [stageF, setStageF] = useState(""); const [branchF, setBranchF] = useState("");
+  const { items, loading, refresh } = useCollection("enquiries", { sort:"-created", perPage:500, realtime:true });
+  const { create, update, remove, loading:saving } = useMutation("enquiries");
+
+  const INIT = { name:"", phone:"", email:"", alt_phone:"", from_address:"", to_address:"", move_type:"household", source:"website", stage:"new", branch:user?.branch||"NDLH", fy:FY, seq:"0", apt_size:"", move_date:"", notes:"" };
+  const [f, setF] = useState(INIT);
+  const [ferr, setFerr] = useState({});
+
+  const filtered = items.filter(e => {
+    const qq = q.toLowerCase();
+    return (!qq || e.name?.toLowerCase().includes(qq) || e.phone?.includes(qq) || e.enq_number?.toLowerCase().includes(qq))
+      && (!stageF || e.stage === stageF) && (!branchF || e.branch === branchF);
+  });
+
+  const validateForm = (d) => {
+    const e = {};
+    if (!d.name?.trim())         e.name         = "Customer name is required";
+    if (!d.phone?.trim())        e.phone        = "Phone number is required";
+    else if (!/^[0-9]{10}$/.test(d.phone)) e.phone = "Enter valid 10-digit number";
+    if (!d.from_address?.trim()) e.from_address = "From address is required";
+    if (!d.to_address?.trim())   e.to_address   = "To address is required";
+    return e;
+  };
+
+  const handleSave = async () => {
+    const errs = validateForm(f);
+    if (Object.keys(errs).length) { setFerr(errs); return; }
+    setFerr({});
+    try {
+      if (editing) {
+        await update(editing.id, f);
+        toast("Enquiry updated successfully!", "success");
+        setEditing(null);
+      } else {
+        await create(f);
+        toast("Enquiry created successfully!", "success");
+        setShowCreate(false);
+        setF(INIT);
+      }
+      refresh();
+    } catch(e) { toast(e.message || "Failed", "error"); }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await remove(deleting.id);
+      toast("Enquiry deleted.", "success");
+      setDeleting(null); refresh();
+    } catch(e) { toast(e.message || "Failed", "error"); }
+  };
+
+  const handleStageChange = async (record, stage) => {
+    try {
+      await update(record.id, { stage });
+      toast(`Stage moved to "${stage}"`, "success");
+      refresh();
+    } catch(e) { toast(e.message, "error"); }
+  };
+
+  const startEdit = (r) => { setF({ ...r }); setFerr({}); setEditing(r); };
+
+  const EnqForm = () => (
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+      {[
+        {l:"Customer Name",  k:"name",         req:true,  ph:"Full name"},
+        {l:"Phone",          k:"phone",         req:true,  ph:"9XXXXXXXXX", max:10},
+        {l:"Alternate Phone",k:"alt_phone",               ph:"Optional",   max:10},
+        {l:"Email",          k:"email",         type:"email",ph:"email@example.com"},
+        {l:"From Address",   k:"from_address",  req:true,  ph:"Pickup address"},
+        {l:"To Address",     k:"to_address",    req:true,  ph:"Drop address"},
+        {l:"Apt / Property", k:"apt_size",                 ph:"e.g. 2BHK, 1200 sqft"},
+        {l:"Move Date",      k:"move_date",     type:"date"},
+      ].map(({l,k,req,ph,type,max})=>(
+        <div key={k}>
+          <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:ferr[k]?"#DC2626":"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>{l}{req&&<span style={{color:"#DB2648"}}> *</span>}</label>
+          <input type={type||"text"} value={f[k]||""} placeholder={ph} maxLength={max}
+            onChange={e=>{ const v=max?e.target.value.replace(/[^0-9]/g,"").slice(0,max):e.target.value; setF(p=>({...p,[k]:v})); if(ferr[k])setFerr(p=>({...p,[k]:undefined})); }}
+            style={{width:"100%",padding:"10px 12px",border:`1.5px solid ${ferr[k]?"#FCA5A5":"#E2E8F0"}`,borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",boxSizing:"border-box",transition:"border-color .18s"}}
+            onFocus={e=>e.target.style.borderColor="#DB2648"} onBlur={e=>e.target.style.borderColor=ferr[k]?"#FCA5A5":"#E2E8F0"}/>
+          {ferr[k]&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:3}}>{ferr[k]}</p>}
+        </div>
+      ))}
+      {[
+        {l:"Move Type", k:"move_type", opts:MOVE_TYPES},
+        {l:"Source",    k:"source",    opts:SOURCES},
+        {l:"Branch",    k:"branch",    opts:BRANCHES},
+        {l:"Stage",     k:"stage",     opts:ENQ_STAGES},
+      ].map(({l,k,opts})=>(
+        <div key={k}>
+          <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>{l}</label>
+          <select value={f[k]||""} onChange={e=>setF(p=>({...p,[k]:e.target.value}))}
+            style={{width:"100%",padding:"10px 12px",border:"1.5px solid #E2E8F0",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",boxSizing:"border-box",appearance:"none",background:"#fff url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.7'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E\") no-repeat right 12px center",cursor:"pointer"}}>
+            {opts.map(o=><option key={o} value={o}>{o}</option>)}
+          </select>
+        </div>
+      ))}
+      <div style={{gridColumn:"1/-1"}}>
+        <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>Notes</label>
+        <textarea value={f.notes||""} onChange={e=>setF(p=>({...p,notes:e.target.value}))} placeholder="Additional notes or special requirements" rows={2}
+          style={{width:"100%",padding:"10px 12px",border:"1.5px solid #E2E8F0",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",boxSizing:"border-box",resize:"vertical"}}/>
+      </div>
+    </div>
+  );
+
+  const STAGE_COLORS = {new:"#2563EB",survey:"#D97706",quotation:"#7C3AED",recalling:"#0D9488",cfr:"#059669",lost:"#DC2626"};
+
+  return (
+    <div style={{animation:"fadeUp .18s ease"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:12}}>
+        <div>
+          <h2 style={{fontFamily:"'Poppins',sans-serif",fontSize:18,fontWeight:700,color:"#0F172A",marginBottom:3}}>Enquiries <span style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"#94A3B8",fontWeight:500}}>{filtered.length} records</span></h2>
+        </div>
+        <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+          <input className="erp-inp" style={{width:220}} placeholder="Search name, phone, ref…" value={q} onChange={e=>setQ(e.target.value)}/>
+          <select className="erp-sel" style={{width:140}} value={stageF} onChange={e=>setStageF(e.target.value)}>
+            <option value="">All Stages</option>
+            {ENQ_STAGES.map(s=><option key={s} value={s}>{s}</option>)}
+          </select>
+          <select className="erp-sel" style={{width:120}} value={branchF} onChange={e=>setBranchF(e.target.value)}>
+            <option value="">All Branches</option>
+            {BRANCHES.map(b=><option key={b} value={b}>{b}</option>)}
+          </select>
+          <button className="erp-btn erp-btn-primary" onClick={()=>{setF(INIT);setFerr({});setShowCreate(true);}}>+ New Enquiry</button>
+        </div>
+      </div>
+
+      {/* Stage summary */}
+      <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+        {ENQ_STAGES.map(s=>{
+          const n = items.filter(e=>e.stage===s).length;
+          const c = STAGE_COLORS[s]||"#94A3B8";
+          return (
+            <div key={s} onClick={()=>setStageF(stageF===s?"":s)} style={{padding:"5px 14px",borderRadius:99,border:`1.5px solid ${stageF===s?c:"#E2E8F0"}`,background:stageF===s?`${c}12`:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:6,transition:"all .15s"}}>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:600,color:stageF===s?c:"#475569",textTransform:"capitalize"}}>{s}</span>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:stageF===s?c:"#94A3B8"}}>{n}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Table */}
+      <div style={{background:"#fff",borderRadius:14,border:"1px solid #F1F5F9",boxShadow:"0 1px 4px rgba(15,23,42,.04)",overflow:"hidden"}}>
+        {loading ? <div style={{display:"flex",justifyContent:"center",padding:48}}><div style={{width:26,height:26,border:"3px solid rgba(219,38,72,.15)",borderTopColor:"#DB2648",borderRadius:"50%",animation:"spin .75s linear infinite"}}/></div>
+        : filtered.length === 0 ? <div style={{textAlign:"center",padding:"48px 20px",fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#94A3B8"}}>No enquiries found</div>
+        : (
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse"}}>
+              <thead>
+                <tr style={{borderBottom:"2px solid #F1F5F9",background:"#FAFAFA"}}>
+                  {["Ref #","Customer","Phone","From → To","Type","Branch","Move Date","Stage","Actions"].map(h=>(
+                    <th key={h} style={{padding:"10px 14px",textAlign:"left",fontFamily:"'Inter',sans-serif",fontSize:10,fontWeight:700,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".6px",whiteSpace:"nowrap"}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((r,i)=>{
+                  const sc = STAGE_COLORS[r.stage]||"#94A3B8";
+                  return (
+                    <tr key={r.id} style={{borderBottom:"1px solid #F8FAFC",transition:"background .1s"}}
+                      onMouseEnter={e=>e.currentTarget.style.background="#FAFAFA"}
+                      onMouseLeave={e=>e.currentTarget.style.background=""}>
+                      <td style={{padding:"11px 14px",fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:700,color:"#0F172A",whiteSpace:"nowrap"}}>{r.enq_number||<span style={{color:"#CBD5E1"}}>—</span>}</td>
+                      <td style={{padding:"11px 14px",whiteSpace:"nowrap"}}>
+                        <div style={{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,color:"#0F172A"}}>{r.name}</div>
+                        <div style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#94A3B8"}}>{r.email||""}</div>
+                      </td>
+                      <td style={{padding:"11px 14px",fontFamily:"'Inter',sans-serif",fontSize:13,color:"#374151",whiteSpace:"nowrap"}}>{r.phone}</td>
+                      <td style={{padding:"11px 14px",maxWidth:220}}>
+                        <div style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#374151",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.from_address}</div>
+                        <div style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#94A3B8",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>→ {r.to_address}</div>
+                      </td>
+                      <td style={{padding:"11px 14px",whiteSpace:"nowrap"}}><STag v={r.move_type}/></td>
+                      <td style={{padding:"11px 14px",fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"#374151"}}>{r.branch}</td>
+                      <td style={{padding:"11px 14px",fontFamily:"'Inter',sans-serif",fontSize:12.5,color:"#374151",whiteSpace:"nowrap"}}>{r.move_date||"—"}</td>
+                      <td style={{padding:"11px 14px",whiteSpace:"nowrap"}}>
+                        <select value={r.stage} onChange={e=>handleStageChange(r,e.target.value)}
+                          style={{padding:"4px 8px",border:`1.5px solid ${sc}40`,borderRadius:6,background:`${sc}10`,color:sc,fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:700,cursor:"pointer",outline:"none",appearance:"none",paddingRight:22,backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6' fill='none' stroke='${encodeURIComponent(sc)}' stroke-width='1.7'%3E%3Cpath d='M1 1l3.5 3.5L8 1'/%3E%3C/svg%3E")`,backgroundRepeat:"no-repeat",backgroundPosition:"right 6px center"}}>
+                          {ENQ_STAGES.map(s=><option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </td>
+                      <td style={{padding:"11px 14px",whiteSpace:"nowrap"}}>
+                        <div style={{display:"flex",gap:6}}>
+                          <button onClick={()=>startEdit(r)} style={{padding:"5px 10px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:7,fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:600,cursor:"pointer"}}>Edit</button>
+                          <button onClick={()=>setDeleting(r)} style={{padding:"5px 10px",background:"rgba(220,38,38,.08)",color:"#DC2626",border:"none",borderRadius:7,fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:600,cursor:"pointer"}}>Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Create Modal */}
+      {showCreate && (
+        <AdminModal title="Create New Enquiry" onClose={()=>{setShowCreate(false);setFerr({});}} width={680}>
+          <EnqForm/>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end",paddingTop:16,borderTop:"1px solid #F1F5F9",marginTop:16}}>
+            <button onClick={()=>{setShowCreate(false);setFerr({});}} style={{padding:"9px 20px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+            <button onClick={handleSave} disabled={saving} style={{padding:"9px 24px",background:"#DB2648",color:"#fff",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",opacity:saving?.7:1}}>{saving?"Saving…":"Create Enquiry"}</button>
+          </div>
+        </AdminModal>
+      )}
+
+      {/* Edit Modal */}
+      {editing && (
+        <AdminModal title={`Edit Enquiry — ${editing.enq_number||editing.name}`} onClose={()=>{setEditing(null);setFerr({});}} width={680}>
+          <EnqForm/>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end",paddingTop:16,borderTop:"1px solid #F1F5F9",marginTop:16}}>
+            <button onClick={()=>{setEditing(null);setFerr({});}} style={{padding:"9px 20px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+            <button onClick={handleSave} disabled={saving} style={{padding:"9px 24px",background:"#DB2648",color:"#fff",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",opacity:saving?.7:1}}>{saving?"Saving…":"Save Changes"}</button>
+          </div>
+        </AdminModal>
+      )}
+
+      {/* Delete Confirm */}
+      {deleting && (
+        <AdminModal title="Delete Enquiry?" onClose={()=>setDeleting(null)} width={420}>
+          <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#374151",lineHeight:1.6,marginBottom:20}}>
+            This will permanently delete enquiry <strong>{deleting.enq_number||deleting.name}</strong>. This action cannot be undone.
+          </p>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+            <button onClick={()=>setDeleting(null)} style={{padding:"9px 20px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+            <button onClick={handleDelete} style={{padding:"9px 20px",background:"#DC2626",color:"#fff",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>Delete Permanently</button>
+          </div>
+        </AdminModal>
+      )}
+    </div>
+  );
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  ADMIN USERS PAGE — full CRUD + permissions
+// ─────────────────────────────────────────────────────────────────────────────
+function AdminUsersPage() {
+  const toast = useToast();
+  const { items, loading, refresh } = useCollection("users", { sort:"-created", perPage:200, realtime:true });
+  const { create, update, remove } = useMutation("users");
+  const [showCreate, setShowCreate] = useState(false);
+  const [editing,    setEditing]    = useState(null);
+  const [deleting,   setDeleting]   = useState(null);
+  const [permUser,   setPermUser]   = useState(null);
+  const [search,     setSearch]     = useState("");
+  const [roleF,      setRoleF]      = useState("");
+  const [busy,       setBusy]       = useState(false);
+
+  const INIT_U = { name:"", email:"", password:"", phone:"", role:"sales_exec", branch:"NDLH", status:"active" };
+  const [f, setF] = useState(INIT_U);
+  const [ferr, setFerr] = useState({});
+
+  const filtered = items.filter(u => {
+    const q = search.toLowerCase();
+    return (!q || u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)) && (!roleF || u.role === roleF);
+  });
+
+  const validateUser = (d, isNew) => {
+    const e = {};
+    if (!d.name?.trim())  e.name  = "Full name is required";
+    if (!d.email?.trim()) e.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) e.email = "Enter a valid email";
+    if (isNew && (!d.password || d.password.length < 8)) e.password = "Password must be at least 8 characters";
+    if (d.phone && !/^[0-9]{10}$/.test(d.phone)) e.phone = "Enter valid 10-digit number";
+    return e;
+  };
+
+  const handleCreate = async () => {
+    const errs = validateUser(f, true);
+    if (Object.keys(errs).length) { setFerr(errs); return; }
+    setBusy(true);
+    try {
+      const perms = ROLE_DEFAULT_PERMISSIONS[f.role] || {};
+      await create({ ...f, passwordConfirm:f.password, emailVisibility:true, permissions:perms });
+      toast(`User ${f.name} created successfully!`, "success");
+      setShowCreate(false); setF(INIT_U); setFerr({}); refresh();
+    } catch(e) {
+      const msg = e?.response?.data?.email?.code === "validation_not_unique" ? "This email is already registered." : e.message;
+      setFerr({ email: msg });
+    } finally { setBusy(false); }
+  };
+
+  const handleEdit = async () => {
+    const errs = validateUser(f, false);
+    if (Object.keys(errs).length) { setFerr(errs); return; }
+    setBusy(true);
+    try {
+      await update(editing.id, { name:f.name, phone:f.phone, role:f.role, branch:f.branch, status:f.status });
+      toast("User updated successfully!", "success");
+      setEditing(null); setFerr({}); refresh();
+    } catch(e) { toast(e.message, "error"); }
+    finally { setBusy(false); }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await remove(deleting.id);
+      toast("User deleted.", "success");
+      setDeleting(null); refresh();
+    } catch(e) { toast(e.message, "error"); }
+  };
+
+  const toggleStatus = async (u) => {
+    const next = u.status === "active" ? "inactive" : "active";
+    try {
+      await update(u.id, { status:next });
+      toast(`User ${next === "active" ? "activated" : "deactivated"}.`, next === "active" ? "success" : "warning");
+      refresh();
+    } catch(e) { toast(e.message, "error"); }
+  };
+
+  const ROLE_DEFAULT_PERMISSIONS = {
+    super_admin: { enquiries:["view","create","edit","delete","assign","stage_change"], surveys:["view","create","edit","assign","report"], quotations:["view","create","edit","send","approve","revise"], bookings:["view","create","edit","cancel","payment"], operations:["view","update","dispatch","checklist"], invoices:["view","create","edit","send","payment","cancel"], vendors:["view","create","edit","delete"], users:["view","create","edit","delete","assign_roles"], reports:["view","export"], settings:["view","edit"] },
+    branch_head: { enquiries:["view","create","edit","assign","stage_change"], surveys:["view","create","edit","assign","report"], quotations:["view","create","edit","send","approve","revise"], bookings:["view","create","edit","cancel","payment"], operations:["view","update","dispatch","checklist"], invoices:["view","create","edit","send","payment"], vendors:["view","create","edit"], users:["view"], reports:["view","export"], settings:["view"] },
+    sales_exec:  { enquiries:["view","create","edit","stage_change"], surveys:["view","create"], quotations:["view","create","edit","send","revise"], bookings:["view"], operations:[], invoices:["view"], vendors:["view"], users:[], reports:["view"], settings:[] },
+    ops_exec:    { enquiries:["view"], surveys:["view","assign"], quotations:["view"], bookings:["view","edit"], operations:["view","update","dispatch","checklist"], invoices:["view"], vendors:["view","create","edit"], users:[], reports:["view"], settings:[] },
+    finance_exec:{ enquiries:["view"], surveys:[], quotations:["view","approve"], bookings:["view","payment"], operations:["view"], invoices:["view","create","edit","send","payment","cancel"], vendors:["view"], users:[], reports:["view","export"], settings:["view"] },
+    surveyor:    { enquiries:["view"], surveys:["view","create","edit","report"], quotations:[], bookings:[], operations:[], invoices:[], vendors:[], users:[], reports:[], settings:[] },
+    vehicle_vendor:  { enquiries:[], surveys:[], quotations:[], bookings:["view"], operations:["view","update"], invoices:["view"], vendors:[], users:[], reports:[], settings:[] },
+    manpower_vendor: { enquiries:[], surveys:[], quotations:[], bookings:["view"], operations:["view","update"], invoices:["view"], vendors:[], users:[], reports:[], settings:[] },
+  };
+
+  const InputRow = ({label, fkey, type="text", req, max}) => (
+    <div>
+      <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:ferr[fkey]?"#DC2626":"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>{label}{req&&<span style={{color:"#DB2648"}}> *</span>}</label>
+      <input type={type} value={f[fkey]||""} maxLength={max}
+        onChange={e=>{ const v=max?e.target.value.replace(/[^0-9]/g,"").slice(0,max):e.target.value; setF(p=>({...p,[fkey]:v})); if(ferr[fkey])setFerr(p=>({...p,[fkey]:undefined})); }}
+        style={{width:"100%",padding:"10px 12px",border:`1.5px solid ${ferr[fkey]?"#FCA5A5":"#E2E8F0"}`,borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",boxSizing:"border-box"}}
+        onFocus={e=>e.target.style.borderColor="#DB2648"} onBlur={e=>e.target.style.borderColor=ferr[fkey]?"#FCA5A5":"#E2E8F0"}/>
+      {ferr[fkey]&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:3}}>{ferr[fkey]}</p>}
+    </div>
+  );
+
+  const SelectRow = ({label, fkey, opts}) => (
+    <div>
+      <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>{label}</label>
+      <select value={f[fkey]||""} onChange={e=>setF(p=>({...p,[fkey]:e.target.value}))}
+        style={{width:"100%",padding:"10px 12px",border:"1.5px solid #E2E8F0",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",appearance:"none",background:"#fff url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.7'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E\") no-repeat right 12px center",boxSizing:"border-box",cursor:"pointer"}}>
+        {opts.map(([v,l])=><option key={v} value={v}>{l}</option>)}
+      </select>
+    </div>
+  );
+
+  return (
+    <div style={{animation:"fadeUp .18s ease"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:12}}>
+        <div>
+          <h2 style={{fontFamily:"'Poppins',sans-serif",fontSize:18,fontWeight:700,color:"#0F172A",marginBottom:3}}>Users <span style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"#94A3B8",fontWeight:500}}>{filtered.length} records</span></h2>
+        </div>
+        <div style={{display:"flex",gap:10}}>
+          <input className="erp-inp" style={{width:220}} placeholder="Search name or email…" value={search} onChange={e=>setSearch(e.target.value)}/>
+          <select className="erp-sel" style={{width:160}} value={roleF} onChange={e=>setRoleF(e.target.value)}>
+            <option value="">All Roles</option>
+            {Object.entries(ROLES).map(([k,v])=><option key={k} value={k}>{v.icon} {v.label}</option>)}
+          </select>
+          <button className="erp-btn erp-btn-primary" onClick={()=>{setF(INIT_U);setFerr({});setShowCreate(true);}}>+ New User</button>
+        </div>
+      </div>
+
+      {/* Role summary */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
+        {Object.entries(ROLES).slice(0,4).map(([k,v])=>{
+          const cnt = items.filter(u=>u.role===k).length;
+          return (
+            <div key={k} onClick={()=>setRoleF(roleF===k?"":k)} style={{background:"#fff",borderRadius:12,border:`1.5px solid ${roleF===k?v.color:"#F1F5F9"}`,padding:"14px 16px",cursor:"pointer",transition:"all .15s",boxShadow:"0 1px 3px rgba(15,23,42,.04)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                <span style={{fontSize:18}}>{v.icon}</span>
+                <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,fontWeight:600,color:"#475569"}}>{v.label}</span>
+              </div>
+              <div style={{fontFamily:"'Poppins',sans-serif",fontSize:22,fontWeight:800,color:v.color}}>{cnt}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Table */}
+      <div style={{background:"#fff",borderRadius:14,border:"1px solid #F1F5F9",boxShadow:"0 1px 4px rgba(15,23,42,.04)",overflow:"hidden"}}>
+        {loading ? <div style={{display:"flex",justifyContent:"center",padding:48}}><div style={{width:26,height:26,border:"3px solid rgba(219,38,72,.15)",borderTopColor:"#DB2648",borderRadius:"50%",animation:"spin .75s linear infinite"}}/></div>
+        : filtered.length===0 ? <div style={{textAlign:"center",padding:"48px 20px",fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#94A3B8"}}>No users found</div>
+        : (
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse"}}>
+              <thead>
+                <tr style={{borderBottom:"2px solid #F1F5F9",background:"#FAFAFA"}}>
+                  {["User","Role","Branch","Phone","Status","Actions"].map(h=>(
+                    <th key={h} style={{padding:"10px 14px",textAlign:"left",fontFamily:"'Inter',sans-serif",fontSize:10,fontWeight:700,color:"#94A3B8",textTransform:"uppercase",letterSpacing:".6px",whiteSpace:"nowrap"}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(u=>{
+                  const rv = ROLES[u.role]||{};
+                  return (
+                    <tr key={u.id} style={{borderBottom:"1px solid #F8FAFC",transition:"background .1s"}}
+                      onMouseEnter={e=>e.currentTarget.style.background="#FAFAFA"}
+                      onMouseLeave={e=>e.currentTarget.style.background=""}>
+                      <td style={{padding:"11px 14px"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:10}}>
+                          <div style={{width:34,height:34,borderRadius:9,background:`${rv.color||"#94A3B8"}15`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>{rv.icon||"👤"}</div>
+                          <div>
+                            <div style={{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:700,color:"#0F172A"}}>{u.name}</div>
+                            <div style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#94A3B8"}}>{u.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{padding:"11px 14px"}}><span style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:700,color:rv.color||"#94A3B8",background:`${rv.color||"#94A3B8"}12`,padding:"3px 10px",borderRadius:99}}>{rv.icon} {rv.label}</span></td>
+                      <td style={{padding:"11px 14px",fontFamily:"'Inter',sans-serif",fontSize:13,color:"#374151"}}>{u.branch||"—"}</td>
+                      <td style={{padding:"11px 14px",fontFamily:"'Inter',sans-serif",fontSize:13,color:"#374151"}}>{u.phone||"—"}</td>
+                      <td style={{padding:"11px 14px"}}>
+                        <span style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:700,color:u.status==="active"?"#059669":"#DC2626",background:u.status==="active"?"rgba(5,150,105,.1)":"rgba(220,38,38,.1)",padding:"3px 10px",borderRadius:99,textTransform:"capitalize"}}>{u.status||"active"}</span>
+                      </td>
+                      <td style={{padding:"11px 14px"}}>
+                        <div style={{display:"flex",gap:6",flexWrap:"nowrap"}}>
+                          <button onClick={()=>{setF({name:u.name,email:u.email,phone:u.phone||"",role:u.role,branch:u.branch||"NDLH",status:u.status||"active"});setFerr({});setEditing(u);}} style={{padding:"5px 10px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:7,fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:600,cursor:"pointer"}}>Edit</button>
+                          <button onClick={()=>setPermUser(u)} style={{padding:"5px 10px",background:"rgba(37,99,235,.08)",color:"#2563EB",border:"none",borderRadius:7,fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:600,cursor:"pointer"}}>Perms</button>
+                          <button onClick={()=>toggleStatus(u)} style={{padding:"5px 10px",background:u.status==="active"?"rgba(220,38,38,.07)":"rgba(5,150,105,.07)",color:u.status==="active"?"#DC2626":"#059669",border:"none",borderRadius:7,fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:600,cursor:"pointer"}}>{u.status==="active"?"Deactivate":"Activate"}</button>
+                          <button onClick={()=>setDeleting(u)} style={{padding:"5px 10px",background:"rgba(220,38,38,.08)",color:"#DC2626",border:"none",borderRadius:7,fontFamily:"'Inter',sans-serif",fontSize:11.5,fontWeight:600,cursor:"pointer"}}>Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Create User Modal */}
+      {showCreate && (
+        <AdminModal title="Create New User" onClose={()=>{setShowCreate(false);setFerr({});}} width={560}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            <InputRow label="Full Name" fkey="name" req/>
+            <InputRow label="Phone" fkey="phone" max={10}/>
+            <InputRow label="Email" fkey="email" type="email" req/>
+            <InputRow label="Password" fkey="password" type="password" req/>
+            <SelectRow label="Role" fkey="role" opts={Object.entries(ROLES).map(([k,v])=>[k,`${v.icon} ${v.label}`])}/>
+            <SelectRow label="Branch" fkey="branch" opts={BRANCHES.map(b=>[b,b])}/>
+            <SelectRow label="Status" fkey="status" opts={[["active","Active"],["inactive","Inactive"]]}/>
+          </div>
+          <div style={{marginTop:12,padding:"10px 14px",background:"#F0F9FF",border:"1px solid #BAE6FD",borderRadius:9}}>
+            <p style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#0369A1"}}>ℹ️ Default permissions for the selected role will be applied automatically. You can customise them via the Perms button after creation.</p>
+          </div>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end",paddingTop:16,borderTop:"1px solid #F1F5F9",marginTop:16}}>
+            <button onClick={()=>{setShowCreate(false);setFerr({});}} style={{padding:"9px 20px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+            <button onClick={handleCreate} disabled={busy} style={{padding:"9px 24px",background:"#DB2648",color:"#fff",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",opacity:busy?.7:1}}>{busy?"Creating…":"Create User"}</button>
+          </div>
+        </AdminModal>
+      )}
+
+      {/* Edit Modal */}
+      {editing && (
+        <AdminModal title={`Edit User — ${editing.name}`} onClose={()=>{setEditing(null);setFerr({});}} width={520}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            <InputRow label="Full Name" fkey="name" req/>
+            <InputRow label="Phone" fkey="phone" max={10}/>
+            <SelectRow label="Role" fkey="role" opts={Object.entries(ROLES).map(([k,v])=>[k,`${v.icon} ${v.label}`])}/>
+            <SelectRow label="Branch" fkey="branch" opts={BRANCHES.map(b=>[b,b])}/>
+            <SelectRow label="Status" fkey="status" opts={[["active","Active"],["inactive","Inactive"],["suspended","Suspended"]]}/>
+          </div>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end",paddingTop:16,borderTop:"1px solid #F1F5F9",marginTop:16}}>
+            <button onClick={()=>{setEditing(null);setFerr({});}} style={{padding:"9px 20px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+            <button onClick={handleEdit} disabled={busy} style={{padding:"9px 24px",background:"#DB2648",color:"#fff",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",opacity:busy?.7:1}}>{busy?"Saving…":"Save Changes"}</button>
+          </div>
+        </AdminModal>
+      )}
+
+      {/* Permissions Modal */}
+      {permUser && <PermissionsModal user={permUser} onClose={()=>setPermUser(null)} onDone={()=>{setPermUser(null);refresh();toast("Permissions updated!","success");}}/>}
+
+      {/* Delete Confirm */}
+      {deleting && (
+        <AdminModal title="Delete User?" onClose={()=>setDeleting(null)} width={420}>
+          <p style={{fontFamily:"'Inter',sans-serif",fontSize:13.5,color:"#374151",lineHeight:1.6,marginBottom:20}}>
+            Permanently delete <strong>{deleting.name}</strong> ({deleting.email})? This cannot be undone.
+          </p>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+            <button onClick={()=>setDeleting(null)} style={{padding:"9px 20px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+            <button onClick={handleDelete} style={{padding:"9px 20px",background:"#DC2626",color:"#fff",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>Delete Permanently</button>
+          </div>
+        </AdminModal>
+      )}
+    </div>
+  );
+}
+
+
