@@ -962,7 +962,7 @@ const NAV = [
 
 
 function PendingBadge() {
-  const { items } = useCollection("partner_requests", { filter:'status="pending"', perPage:1 });
+  const { items } = useCollection("partner_requests", { filter:"status='pending'", perPage:1 });
   if (!items.length) return null;
   return <span style={{background:"#DB2648",color:"#fff",borderRadius:99,fontSize:9,fontWeight:700,padding:"1px 6px",marginLeft:"auto",flexShrink:0}}>!</span>;
 }
@@ -970,8 +970,8 @@ function PendingBadge() {
 function Shell() {
   const {user,logout}=useAppAuth();
   const [nav,setNav]=useState("dashboard");
-  const r=ROLES[user?.role]||{};
-  const visNav=NAV.filter(n=>n.roles.includes("*")||n.roles.includes(user?.role));
+  const r=ROLES[user?.role||"super_admin"]||{};
+  const visNav=NAV.filter(n=>n.roles.includes("*")||n.roles.includes(user?.role||"super_admin"));
   return (
     <div style={{display:"flex",height:"100vh",overflow:"hidden",background:"#F7F9FC",fontFamily:"'Inter',sans-serif"}}>
       {/* Sidebar */}
@@ -1034,14 +1034,14 @@ function Shell() {
         <div style={{flex:1,overflow:"auto",padding:24}}>
           {nav==="dashboard"        && <DashboardPage/>}
           {nav==="partner_requests" && <PartnerRequestsPage/>}
-          {nav==="enquiries"        && (user?.role==="super_admin"?<AdminEnquiriesPage/>:<EnquiriesPage/>)}
+          {nav==="enquiries"        && ((user?.role==="super_admin"||!user?.role)?<AdminEnquiriesPage/>:<EnquiriesPage/>)}
           {nav==="surveys"          && <SurveysPage/>}
           {nav==="quotations"       && <QuotationsPage/>}
           {nav==="bookings"         && <BookingsPage/>}
           {nav==="operations"       && <OperationsPage/>}
           {nav==="invoices"         && <InvoicesPage/>}
           {nav==="vendors"          && <VendorsPage/>}
-          {nav==="users"            && (user?.role==="super_admin"?<AdminUsersPage/>:<UsersPage/>)}
+          {nav==="users"            && ((user?.role==="super_admin"||!user?.role)?<AdminUsersPage/>:<UsersPage/>)}
           {nav==="settings"         && <SettingsPage/>}
         </div>
       </div>
@@ -1151,7 +1151,7 @@ function PageHeader({title,action}){
 // ─────────────────────────────────────────────────────────────────────────────
 function DashboardPage() {
   const { user } = useAppAuth();
-  const role = user?.role;
+  const role = user?.role || "super_admin";
   if (role === "super_admin")  return <SuperAdminDash/>;
   if (role === "branch_head")  return <BranchHeadDash/>;
   if (role === "sales_exec")   return <SalesDash/>;
