@@ -2305,22 +2305,6 @@ function PermissionsModal({ user, onClose, onDone }) {
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  NAV CONFIG (role-aware)
-// ─────────────────────────────────────────────────────────────────────────────
-const NAV = [
-  { id:"dashboard",        label:"Dashboard",        icon:"◼", roles:["*"] },
-  { id:"partner_requests", label:"Partner Requests",  icon:"🤝", roles:["super_admin","branch_head"] },
-  { id:"enquiries",        label:"Enquiries",         icon:"📥", roles:["super_admin","branch_head","sales_exec"] },
-  { id:"surveys",          label:"Surveys",           icon:"📋", roles:["super_admin","branch_head","surveyor","sales_exec"] },
-  { id:"quotations",       label:"Quotations",        icon:"📄", roles:["super_admin","branch_head","sales_exec","finance_exec"] },
-  { id:"bookings",         label:"Bookings / CFR",    icon:"📦", roles:["super_admin","branch_head","ops_exec","finance_exec"] },
-  { id:"operations",       label:"Operations",        icon:"🚛", roles:["super_admin","branch_head","ops_exec"] },
-  { id:"invoices",         label:"Invoices",          icon:"💳", roles:["super_admin","branch_head","finance_exec"] },
-  { id:"vendors",          label:"Vendors",           icon:"🏭", roles:["super_admin","branch_head","ops_exec"] },
-  { id:"users",            label:"Users",             icon:"👥", roles:["super_admin"] },
-  { id:"settings",         label:"Settings",          icon:"⚙️",  roles:["super_admin"] },
-];
 
 
 // ─────────────────────────────────────────────────────────────────────────────
