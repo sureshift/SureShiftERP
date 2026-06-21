@@ -201,19 +201,52 @@ export default function App() {
     hasPerm:(mod,action)=>hasPerm(authHook.user,mod,action),
     isSuperAdmin:authHook.user?.role==="super_admin" };
 
-  // Show reset page immediately — no auth needed
-  if (resetToken) {
-    return <ResetPasswordPage token={resetToken} onDone={()=>setResetToken(null)}/>;
-  }
-
   // Show reset page immediately before auth check
   if (resetToken) return <ResetPasswordPage token={resetToken} onDone={()=>setResetToken(null)}/>;
+
   return (
     <ToastProvider>
+      <GlobalStyle/>
       <AuthCtx.Provider value={ctx}>
         {authHook.loading?<Splash/>:authHook.user?<Shell/>:<Login/>}
       </AuthCtx.Provider>
     </ToastProvider>
+  );
+}
+
+// ── Global stylesheet — always mounted, shared across Login/Shell/Reset ───────
+function GlobalStyle() {
+  return (
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+      *{box-sizing:border-box}
+      @keyframes spin{to{transform:rotate(360deg)}}
+      @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+      @keyframes pulseDot{0%,100%{opacity:.5}50%{opacity:1}}
+      .page-fade{animation:fadeUp .18s ease}
+
+      /* ── Unified form controls — same language as login/signup ─────────────── */
+      .erp-inp{width:100%;padding:10px 13px;border:1.5px solid #E2E8F0;border-radius:9px;font:400 13.5px/1.2 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff;transition:border-color .18s,box-shadow .18s;box-sizing:border-box}
+      .erp-inp:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
+      .erp-inp::placeholder{color:#CBD5E1}
+      .erp-sel{appearance:none;width:100%;padding:10px 36px 10px 13px;border:1.5px solid #E2E8F0;border-radius:9px;font:400 13.5px/1 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.7'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E") no-repeat right 12px center;cursor:pointer;box-sizing:border-box;transition:border-color .18s,box-shadow .18s}
+      .erp-sel:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
+
+      /* ── Buttons — same as login's .abtn ─────────────────────────────────────── */
+      .erp-btn{padding:9px 18px;border-radius:9px;border:none;cursor:pointer;font:600 13px 'Inter',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+      .erp-btn-primary{background:#DB2648;color:#fff}
+      .erp-btn-primary:hover{background:#B91C3C;transform:translateY(-1px)}
+      .erp-btn-secondary{background:#F1F5F9;color:#475569}
+      .erp-btn-secondary:hover{background:#E2E8F0}
+
+      /* ── Tags / pills used across tables ──────────────────────────────────── */
+      .erp-tag{display:inline-block;font-family:'Inter',sans-serif;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;text-transform:capitalize;white-space:nowrap}
+
+      /* ── Sidebar navigation buttons ───────────────────────────────────────── */
+      .nav-btn{display:flex;align-items:center;gap:11px;width:100%;padding:9px 11px;margin-bottom:2px;border:none;background:transparent;border-radius:9px;cursor:pointer;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;color:rgba(255,255,255,.55);transition:all .15s;text-align:left}
+      .nav-btn:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.85)}
+      .nav-btn.active{background:rgba(219,38,72,.16);color:#fff}
+    `}</style>
   );
 }
 
@@ -574,15 +607,7 @@ function Login() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes quoteIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulseDot{0%,100%{opacity:.5}50%{opacity:1}}
-      .erp-inp{width:100%;padding:10px 13px;border:1.5px solid #E2E8F0;border-radius:9px;font:400 13.5px/1.2 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff;transition:border-color .18s;box-sizing:border-box}
-      .erp-inp:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
-      .erp-inp::placeholder{color:#CBD5E1}
-      .erp-sel{appearance:none;width:100%;padding:10px 36px 10px 13px;border:1.5px solid #E2E8F0;border-radius:9px;font:400 13.5px/1 'Inter',sans-serif;color:#0F172A;outline:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.7'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E") no-repeat right 12px center;cursor:pointer;box-sizing:border-box;transition:border-color .18s}
-      .erp-sel:focus{border-color:#DB2648;box-shadow:0 0 0 3px rgba(219,38,72,.08)}
-      .erp-btn{padding:9px 18px;border-radius:9px;border:none;cursor:pointer;font:600 13px 'Inter',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
-      .erp-btn-primary{background:#DB2648;color:#fff}
-      .erp-btn-primary:hover{background:#B91C3C;transform:translateY(-1px)}
-      .page-fade{animation:fadeUp .18s ease}
+        @keyframes pulseDot{0%,100%{opacity:.5}50%{opacity:1}}
         @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
         .aw{display:grid;grid-template-columns:1.05fr 1fr;width:100%;max-width:1040px;min-height:640px;border-radius:22px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.18)}
         .al{background:#DB2648;padding:50px 44px;display:flex;flex-direction:column;position:relative;overflow:hidden}
@@ -947,17 +972,17 @@ function Login() {
 //  NAV CONFIG
 // ─────────────────────────────────────────────────────────────────────────────
 const NAV = [
-  { id:"dashboard",        label:"Dashboard",       icon:"◼", roles:["*"] },
-  { id:"partner_requests", label:"Partner Requests", icon:"🤝", roles:["super_admin","branch_head"] },
-  { id:"enquiries",        label:"Enquiries",        icon:"📥", roles:["super_admin","branch_head","sales_exec"] },
-  { id:"surveys",          label:"Surveys",          icon:"📋", roles:["super_admin","branch_head","surveyor","sales_exec"] },
-  { id:"quotations",       label:"Quotations",       icon:"📄", roles:["super_admin","branch_head","sales_exec","finance_exec"] },
-  { id:"bookings",         label:"Bookings / CFR",   icon:"📦", roles:["super_admin","branch_head","ops_exec","finance_exec"] },
-  { id:"operations",       label:"Operations",       icon:"🚛", roles:["super_admin","branch_head","ops_exec"] },
-  { id:"invoices",         label:"Invoices",         icon:"💳", roles:["super_admin","branch_head","finance_exec"] },
-  { id:"vendors",          label:"Vendors",          icon:"🏭", roles:["super_admin","branch_head","ops_exec"] },
-  { id:"users",            label:"Users",            icon:"👥", roles:["super_admin"] },
-  { id:"settings",         label:"Settings",         icon:"⚙️",  roles:["super_admin"] },
+  { id:"dashboard",        label:"Dashboard",       icon:"dashboard", roles:["*"] },
+  { id:"partner_requests", label:"Partner Requests", icon:"partner",   roles:["super_admin","branch_head"] },
+  { id:"enquiries",        label:"Enquiries",        icon:"inbox",     roles:["super_admin","branch_head","sales_exec"] },
+  { id:"surveys",          label:"Surveys",          icon:"clipboard", roles:["super_admin","branch_head","surveyor","sales_exec"] },
+  { id:"quotations",       label:"Quotations",       icon:"document",  roles:["super_admin","branch_head","sales_exec","finance_exec"] },
+  { id:"bookings",         label:"Bookings / CFR",   icon:"package",   roles:["super_admin","branch_head","ops_exec","finance_exec"] },
+  { id:"operations",       label:"Operations",       icon:"truck",     roles:["super_admin","branch_head","ops_exec"] },
+  { id:"invoices",         label:"Invoices",         icon:"card",      roles:["super_admin","branch_head","finance_exec"] },
+  { id:"vendors",          label:"Vendors",          icon:"factory",   roles:["super_admin","branch_head","ops_exec"] },
+  { id:"users",            label:"Users",            icon:"users",     roles:["super_admin"] },
+  { id:"settings",         label:"Settings",         icon:"gear",      roles:["super_admin"] },
 ];
 
 
@@ -1093,7 +1118,9 @@ function Shell() {
           <div style={{fontFamily:"'Inter',sans-serif",fontSize:9.5,fontWeight:700,color:"rgba(255,255,255,.25)",letterSpacing:"1.5px",textTransform:"uppercase",padding:"0 10px 8px"}}>MAIN MENU</div>
           {visNav.map(n=>(
             <button key={n.id} className={`nav-btn${nav===n.id?" active":""}`} onClick={()=>setNav(n.id)}>
-              <span style={{fontSize:14,width:18,textAlign:"center"}}>{n.icon}</span>
+              <span style={{width:18,height:18,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                {I[n.icon]?.(nav===n.id?"#fff":"rgba(255,255,255,.55)")}
+              </span>
               <span>{n.label}</span>
               {nav===n.id&&<span style={{marginLeft:"auto",width:6,height:6,borderRadius:"50%",background:"#DB2648"}}/>}
             </button>
@@ -1119,8 +1146,9 @@ function Shell() {
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
         {/* Top bar */}
         <div style={{background:"#fff",borderBottom:"1px solid #E8ECF4",padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,boxShadow:"0 1px 3px rgba(15,23,42,.04)"}}>
-          <div style={{fontFamily:"'Poppins',sans-serif",fontSize:15,fontWeight:700,color:"#0F172A"}}>
-            {visNav.find(n=>n.id===nav)?.icon}&nbsp; {visNav.find(n=>n.id===nav)?.label}
+          <div style={{fontFamily:"'Poppins',sans-serif",fontSize:15,fontWeight:700,color:"#0F172A",display:"flex",alignItems:"center",gap:8}}>
+            <span style={{width:18,height:18,display:"flex",alignItems:"center",justifyContent:"center"}}>{I[visNav.find(n=>n.id===nav)?.icon]?.("#DB2648")}</span>
+            {visNav.find(n=>n.id===nav)?.label}
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#94A3B8"}}>FY {FY}</span>
@@ -1370,6 +1398,15 @@ const I = {
   payout:    c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#7C3AED"} strokeWidth="1.9" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
   rating:    c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#D97706"} strokeWidth="1.9" strokeLinecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
   pending:   c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#DB2648"} strokeWidth="1.9" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  dashboard: c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#fff"} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>,
+  partner:   c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#fff"} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 9a3.5 3.5 0 107 0 3.5 3.5 0 00-7 0z"/><path d="M2 12l3-3 2 2-3 3z"/><path d="M22 12l-3-3-2 2 3 3z"/><path d="M9 14l-2 2 3 3 2-2"/><path d="M15 14l2 2-3 3-2-2"/></svg>,
+  inbox:     c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#fff"} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>,
+  clipboard: c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#fff"} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>,
+  document:  c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#fff"} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>,
+  package:   c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#fff"} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+  card:      c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#fff"} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
+  factory:   c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#fff"} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M2 22V8l5 4V8l5 4V8l5 4V4h5v18z"/></svg>,
+  gear:      c => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c||"#fff"} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
 };
 const fmt = n => { if(!n)return"₹0"; if(n>=10000000)return`₹${(n/10000000).toFixed(1)}Cr`; if(n>=100000)return`₹${(n/100000).toFixed(1)}L`; if(n>=1000)return`₹${(n/1000).toFixed(0)}K`; return`₹${n}`; };
 
