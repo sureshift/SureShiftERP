@@ -2462,13 +2462,16 @@ function PermissionsModal({ user, onClose, onDone }) {
 function PartnerRequestsPage() {
   const toast = useToast();
   const { items, loading, refresh } = useCollection("partner_requests", { sort:"-created", perPage:200, realtime:true });
-  const { update } = useMutation("partner_requests");
+  const { create, update } = useMutation("partner_requests");
   const [filter, setFilter] = useState("pending");
   const [search, setSearch] = useState("");
   const [viewing, setViewing] = useState(null);
   const [processing, setProcessing] = useState(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [cf, setCf] = useState({ name:"", email:"", phone:"", company:"", partner_type:"vehicle", status:"approved" });
+  const [cferr, setCferr] = useState({});
 
   const filtered = items.filter(r => {
     const q = search.toLowerCase();
@@ -2495,6 +2498,41 @@ function PartnerRequestsPage() {
     } finally { setBusy(false); }
   };
 
+  const validateCf = (d) => {
+    const e = {};
+    if (!d.name?.trim())    e.name    = "Name is required";
+    if (!d.email?.trim())   e.email   = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) e.email = "Enter a valid email";
+    if (!d.phone?.trim())   e.phone   = "Phone is required";
+    else if (!/^[0-9]{10}$/.test(d.phone)) e.phone = "Enter a valid 10-digit number";
+    if (!d.company?.trim()) e.company = "Company name is required";
+    return e;
+  };
+
+  const handleCreatePartner = async () => {
+    const errs = validateCf(cf);
+    if (Object.keys(errs).length) { setCferr(errs); return; }
+    setCferr({}); setBusy(true);
+    try {
+      const emailMatch = items.some(r=>r.email?.toLowerCase()===cf.email.trim().toLowerCase());
+      const phoneMatch = items.some(r=>r.phone===cf.phone);
+      const dup = {};
+      if (emailMatch) dup.email = "This email is already registered.";
+      if (phoneMatch) dup.phone = "This phone number is already registered.";
+      if (Object.keys(dup).length) { setCferr(dup); setBusy(false); return; }
+
+      await create({
+        name: cf.name.trim(), email: cf.email.trim().toLowerCase(), phone: cf.phone,
+        company: cf.company.trim(), partner_type: cf.partner_type, status: cf.status,
+        admin_notes: "Added directly by admin", submitted_at: new Date().toISOString(),
+      });
+      toast("Partner added successfully!", "success");
+      setShowCreate(false); setCf({ name:"", email:"", phone:"", company:"", partner_type:"vehicle", status:"approved" }); refresh();
+    } catch(e) {
+      toast(e.message || "Failed to add partner", "error");
+    } finally { setBusy(false); }
+  };
+
   const PT_ICONS = { vehicle:"🚛", manpower:"👷", material:"📦", business:"🤝" };
   const STATUS_COLORS = { pending:"#D97706", approved:"#059669", rejected:"#DC2626", on_hold:"#7C3AED" };
 
@@ -2506,7 +2544,10 @@ function PartnerRequestsPage() {
           <h2 style={{fontFamily:"'Poppins',sans-serif",fontSize:18,fontWeight:700,color:"#0F172A",marginBottom:3}}>Partner Requests</h2>
           <p style={{fontFamily:"'Inter',sans-serif",fontSize:13,color:"#64748B"}}>Review and approve partner registrations from the signup form.</p>
         </div>
-        <input className="erp-inp" style={{width:240}} placeholder="Search name, email, phone…" value={search} onChange={e=>setSearch(e.target.value)}/>
+        <div style={{display:"flex",gap:10,alignItems:"center"}}>
+          <input className="erp-inp" style={{width:240}} placeholder="Search name, email, phone…" value={search} onChange={e=>setSearch(e.target.value)}/>
+          <button className="erp-btn erp-btn-primary" onClick={()=>{setCf({ name:"", email:"", phone:"", company:"", partner_type:"vehicle", status:"approved" });setCferr({});setShowCreate(true);}}>+ Add Partner</button>
+        </div>
       </div>
 
       {/* Status filter tabs */}
@@ -2664,13 +2705,71 @@ function PartnerRequestsPage() {
           </div>
         </AdminModal>
       )}
+
+      {/* Add Partner Directly modal */}
+      {showCreate && (
+        <AdminModal title="Add Partner Directly" onClose={()=>{setShowCreate(false);setCferr({});}} width={520}>
+          <PartnerForm f={cf} setF={setCf} ferr={cferr} setFerr={setCferr}/>
+          <div style={{marginTop:12,padding:"10px 14px",background:"#F0F9FF",border:"1px solid #BAE6FD",borderRadius:9}}>
+            <p style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#0369A1"}}>ℹ️ Use this when onboarding a partner outside the signup form — e.g. over phone or in person. They will skip the pending queue if marked Approved.</p>
+          </div>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end",paddingTop:16,borderTop:"1px solid #F1F5F9",marginTop:16}}>
+            <button onClick={()=>{setShowCreate(false);setCferr({});}} style={{padding:"9px 20px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+            <button onClick={handleCreatePartner} disabled={busy} style={{padding:"9px 24px",background:"#DB2648",color:"#fff",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",opacity:busy?.7:1}}>{busy?"Adding…":"Add Partner"}</button>
+          </div>
+        </AdminModal>
+      )}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  ADMIN MODAL (clean, reusable)
-// ─────────────────────────────────────────────────────────────────────────────
+function PartnerForm({ f, setF, ferr, setFerr }) {
+  const upd = (k,v) => { setF(p=>({...p,[k]:v})); if(ferr[k]) setFerr(p=>({...p,[k]:undefined})); };
+  const inpStyle = (k) => ({width:"100%",padding:"10px 12px",border:`1.5px solid ${ferr[k]?"#FCA5A5":"#E2E8F0"}`,borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",boxSizing:"border-box",transition:"border-color .18s"});
+  const lblStyle = (k) => ({display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:ferr[k]?"#DC2626":"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5});
+  return (
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+      <div style={{gridColumn:"1/-1"}}>
+        <label style={lblStyle("name")}>Full Name <span style={{color:"#DB2648"}}>*</span></label>
+        <input value={f.name} placeholder="Partner's full name" onChange={e=>upd("name",e.target.value)} style={inpStyle("name")}/>
+        {ferr.name&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:3}}>{ferr.name}</p>}
+      </div>
+      <div>
+        <label style={lblStyle("email")}>Email <span style={{color:"#DB2648"}}>*</span></label>
+        <input type="email" value={f.email} placeholder="email@example.com" onChange={e=>upd("email",e.target.value)} style={inpStyle("email")}/>
+        {ferr.email&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:3}}>{ferr.email}</p>}
+      </div>
+      <div>
+        <label style={lblStyle("phone")}>Phone <span style={{color:"#DB2648"}}>*</span></label>
+        <input value={f.phone} maxLength={10} placeholder="9XXXXXXXXX" onChange={e=>upd("phone",e.target.value.replace(/[^0-9]/g,"").slice(0,10))} style={inpStyle("phone")}/>
+        {ferr.phone&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:3}}>{ferr.phone}</p>}
+      </div>
+      <div style={{gridColumn:"1/-1"}}>
+        <label style={lblStyle("company")}>Company / Firm Name <span style={{color:"#DB2648"}}>*</span></label>
+        <input value={f.company} placeholder="Company name" onChange={e=>upd("company",e.target.value)} style={inpStyle("company")}/>
+        {ferr.company&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:3}}>{ferr.company}</p>}
+      </div>
+      <div>
+        <label style={lblStyle("partner_type")}>Partner Type</label>
+        <select value={f.partner_type} onChange={e=>upd("partner_type",e.target.value)} style={{...inpStyle("partner_type"),appearance:"none",background:"#fff url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.7'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E\") no-repeat right 12px center",cursor:"pointer"}}>
+          <option value="vehicle">Vehicle Partner</option>
+          <option value="manpower">Manpower Partner</option>
+          <option value="material">Material Partner</option>
+          <option value="business">Business Partner</option>
+        </select>
+      </div>
+      <div>
+        <label style={lblStyle("status")}>Status</label>
+        <select value={f.status} onChange={e=>upd("status",e.target.value)} style={{...inpStyle("status"),appearance:"none",background:"#fff url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.7'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E\") no-repeat right 12px center",cursor:"pointer"}}>
+          <option value="approved">Approved</option>
+          <option value="pending">Pending</option>
+          <option value="on_hold">On Hold</option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
 function AdminModal({ title, onClose, children, width=520 }) {
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20,backdropFilter:"blur(4px)"}}
@@ -2691,6 +2790,51 @@ function AdminModal({ title, onClose, children, width=520 }) {
 // ─────────────────────────────────────────────────────────────────────────────
 //  ADMIN ENQUIRIES — full CRUD with stage management
 // ─────────────────────────────────────────────────────────────────────────────
+function EnqForm({ f, setF, ferr, setFerr }) {
+  return (
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+      {[
+        {l:"Customer Name",  k:"name",         req:true,  ph:"Full name"},
+        {l:"Phone",          k:"phone",         req:true,  ph:"9XXXXXXXXX", max:10},
+        {l:"Alternate Phone",k:"alt_phone",               ph:"Optional",   max:10},
+        {l:"Email",          k:"email",         type:"email",ph:"email@example.com"},
+        {l:"From Address",   k:"from_address",  req:true,  ph:"Pickup address"},
+        {l:"To Address",     k:"to_address",    req:true,  ph:"Drop address"},
+        {l:"Apt / Property", k:"apt_size",                 ph:"e.g. 2BHK, 1200 sqft"},
+        {l:"Move Date",      k:"move_date",     type:"date"},
+      ].map(({l,k,req,ph,type,max})=>(
+        <div key={k}>
+          <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:ferr[k]?"#DC2626":"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>{l}{req&&<span style={{color:"#DB2648"}}> *</span>}</label>
+          <input type={type||"text"} value={f[k]||""} placeholder={ph} maxLength={max}
+            onChange={e=>{ const v=max?e.target.value.replace(/[^0-9]/g,"").slice(0,max):e.target.value; setF(p=>({...p,[k]:v})); if(ferr[k])setFerr(p=>({...p,[k]:undefined})); }}
+            style={{width:"100%",padding:"10px 12px",border:`1.5px solid ${ferr[k]?"#FCA5A5":"#E2E8F0"}`,borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",boxSizing:"border-box",transition:"border-color .18s"}}
+            onFocus={e=>e.target.style.borderColor="#DB2648"} onBlur={e=>e.target.style.borderColor=ferr[k]?"#FCA5A5":"#E2E8F0"}/>
+          {ferr[k]&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:3}}>{ferr[k]}</p>}
+        </div>
+      ))}
+      {[
+        {l:"Move Type", k:"move_type", opts:MOVE_TYPES},
+        {l:"Source",    k:"source",    opts:SOURCES},
+        {l:"Branch",    k:"branch",    opts:BRANCHES},
+        {l:"Stage",     k:"stage",     opts:ENQ_STAGES},
+      ].map(({l,k,opts})=>(
+        <div key={k}>
+          <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>{l}</label>
+          <select value={f[k]||""} onChange={e=>setF(p=>({...p,[k]:e.target.value}))}
+            style={{width:"100%",padding:"10px 12px",border:"1.5px solid #E2E8F0",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",boxSizing:"border-box",appearance:"none",background:"#fff url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.7'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E\") no-repeat right 12px center",cursor:"pointer"}}>
+            {opts.map(o=><option key={o} value={o}>{o}</option>)}
+          </select>
+        </div>
+      ))}
+      <div style={{gridColumn:"1/-1"}}>
+        <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>Notes</label>
+        <textarea value={f.notes||""} onChange={e=>setF(p=>({...p,notes:e.target.value}))} placeholder="Additional notes or special requirements" rows={2}
+          style={{width:"100%",padding:"10px 12px",border:"1.5px solid #E2E8F0",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",boxSizing:"border-box",resize:"vertical"}}/>
+      </div>
+    </div>
+  );
+}
+
 function AdminEnquiriesPage() {
   const toast = useToast();
   const { user } = useAppAuth();
@@ -2757,49 +2901,6 @@ function AdminEnquiriesPage() {
   };
 
   const startEdit = (r) => { setF({ ...r }); setFerr({}); setEditing(r); };
-
-  const EnqForm = () => (
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-      {[
-        {l:"Customer Name",  k:"name",         req:true,  ph:"Full name"},
-        {l:"Phone",          k:"phone",         req:true,  ph:"9XXXXXXXXX", max:10},
-        {l:"Alternate Phone",k:"alt_phone",               ph:"Optional",   max:10},
-        {l:"Email",          k:"email",         type:"email",ph:"email@example.com"},
-        {l:"From Address",   k:"from_address",  req:true,  ph:"Pickup address"},
-        {l:"To Address",     k:"to_address",    req:true,  ph:"Drop address"},
-        {l:"Apt / Property", k:"apt_size",                 ph:"e.g. 2BHK, 1200 sqft"},
-        {l:"Move Date",      k:"move_date",     type:"date"},
-      ].map(({l,k,req,ph,type,max})=>(
-        <div key={k}>
-          <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:ferr[k]?"#DC2626":"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>{l}{req&&<span style={{color:"#DB2648"}}> *</span>}</label>
-          <input type={type||"text"} value={f[k]||""} placeholder={ph} maxLength={max}
-            onChange={e=>{ const v=max?e.target.value.replace(/[^0-9]/g,"").slice(0,max):e.target.value; setF(p=>({...p,[k]:v})); if(ferr[k])setFerr(p=>({...p,[k]:undefined})); }}
-            style={{width:"100%",padding:"10px 12px",border:`1.5px solid ${ferr[k]?"#FCA5A5":"#E2E8F0"}`,borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",boxSizing:"border-box",transition:"border-color .18s"}}
-            onFocus={e=>e.target.style.borderColor="#DB2648"} onBlur={e=>e.target.style.borderColor=ferr[k]?"#FCA5A5":"#E2E8F0"}/>
-          {ferr[k]&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:3}}>{ferr[k]}</p>}
-        </div>
-      ))}
-      {[
-        {l:"Move Type", k:"move_type", opts:MOVE_TYPES},
-        {l:"Source",    k:"source",    opts:SOURCES},
-        {l:"Branch",    k:"branch",    opts:BRANCHES},
-        {l:"Stage",     k:"stage",     opts:ENQ_STAGES},
-      ].map(({l,k,opts})=>(
-        <div key={k}>
-          <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>{l}</label>
-          <select value={f[k]||""} onChange={e=>setF(p=>({...p,[k]:e.target.value}))}
-            style={{width:"100%",padding:"10px 12px",border:"1.5px solid #E2E8F0",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",boxSizing:"border-box",appearance:"none",background:"#fff url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.7'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E\") no-repeat right 12px center",cursor:"pointer"}}>
-            {opts.map(o=><option key={o} value={o}>{o}</option>)}
-          </select>
-        </div>
-      ))}
-      <div style={{gridColumn:"1/-1"}}>
-        <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>Notes</label>
-        <textarea value={f.notes||""} onChange={e=>setF(p=>({...p,notes:e.target.value}))} placeholder="Additional notes or special requirements" rows={2}
-          style={{width:"100%",padding:"10px 12px",border:"1.5px solid #E2E8F0",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",boxSizing:"border-box",resize:"vertical"}}/>
-      </div>
-    </div>
-  );
 
   const STAGE_COLORS = {new:"#2563EB",survey:"#D97706",quotation:"#7C3AED",recalling:"#0D9488",cfr:"#059669",lost:"#DC2626"};
 
@@ -2895,7 +2996,7 @@ function AdminEnquiriesPage() {
       {/* Create Modal */}
       {showCreate && (
         <AdminModal title="Create New Enquiry" onClose={()=>{setShowCreate(false);setFerr({});}} width={680}>
-          <EnqForm/>
+          <EnqForm f={f} setF={setF} ferr={ferr} setFerr={setFerr}/>
           <div style={{display:"flex",gap:10,justifyContent:"flex-end",paddingTop:16,borderTop:"1px solid #F1F5F9",marginTop:16}}>
             <button onClick={()=>{setShowCreate(false);setFerr({});}} style={{padding:"9px 20px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
             <button onClick={handleSave} disabled={saving} style={{padding:"9px 24px",background:"#DB2648",color:"#fff",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",opacity:saving?.7:1}}>{saving?"Saving…":"Create Enquiry"}</button>
@@ -2906,7 +3007,7 @@ function AdminEnquiriesPage() {
       {/* Edit Modal */}
       {editing && (
         <AdminModal title={`Edit Enquiry — ${editing.enq_number||editing.name}`} onClose={()=>{setEditing(null);setFerr({});}} width={680}>
-          <EnqForm/>
+          <EnqForm f={f} setF={setF} ferr={ferr} setFerr={setFerr}/>
           <div style={{display:"flex",gap:10,justifyContent:"flex-end",paddingTop:16,borderTop:"1px solid #F1F5F9",marginTop:16}}>
             <button onClick={()=>{setEditing(null);setFerr({});}} style={{padding:"9px 20px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
             <button onClick={handleSave} disabled={saving} style={{padding:"9px 24px",background:"#DB2648",color:"#fff",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer",opacity:saving?.7:1}}>{saving?"Saving…":"Save Changes"}</button>
@@ -2934,6 +3035,31 @@ function AdminEnquiriesPage() {
 // ─────────────────────────────────────────────────────────────────────────────
 //  ADMIN USERS PAGE — full CRUD + permissions
 // ─────────────────────────────────────────────────────────────────────────────
+function InputRow({label, fkey, type="text", req, max, f, setF, ferr, setFerr}) {
+  return (
+    <div>
+      <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:ferr[fkey]?"#DC2626":"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>{label}{req&&<span style={{color:"#DB2648"}}> *</span>}</label>
+      <input type={type} value={f[fkey]||""} maxLength={max}
+        onChange={e=>{ const v=max?e.target.value.replace(/[^0-9]/g,"").slice(0,max):e.target.value; setF(p=>({...p,[fkey]:v})); if(ferr[fkey])setFerr(p=>({...p,[fkey]:undefined})); }}
+        style={{width:"100%",padding:"10px 12px",border:`1.5px solid ${ferr[fkey]?"#FCA5A5":"#E2E8F0"}`,borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",boxSizing:"border-box"}}
+        onFocus={e=>e.target.style.borderColor="#DB2648"} onBlur={e=>e.target.style.borderColor=ferr[fkey]?"#FCA5A5":"#E2E8F0"}/>
+      {ferr[fkey]&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:3}}>{ferr[fkey]}</p>}
+    </div>
+  );
+}
+
+function SelectRow({label, fkey, opts, f, setF}) {
+  return (
+    <div>
+      <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>{label}</label>
+      <select value={f[fkey]||""} onChange={e=>setF(p=>({...p,[fkey]:e.target.value}))}
+        style={{width:"100%",padding:"10px 12px",border:"1.5px solid #E2E8F0",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",appearance:"none",background:"#fff url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.7'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E\") no-repeat right 12px center",boxSizing:"border-box",cursor:"pointer"}}>
+        {opts.map(([v,l])=><option key={v} value={v}>{l}</option>)}
+      </select>
+    </div>
+  );
+}
+
 function AdminUsersPage() {
   const toast = useToast();
   const { items, loading, refresh } = useCollection("users", { sort:"-created", perPage:200, realtime:true });
@@ -3019,27 +3145,6 @@ function AdminUsersPage() {
     vehicle_vendor:  { enquiries:[], surveys:[], quotations:[], bookings:["view"], operations:["view","update"], invoices:["view"], vendors:[], users:[], reports:[], settings:[] },
     manpower_vendor: { enquiries:[], surveys:[], quotations:[], bookings:["view"], operations:["view","update"], invoices:["view"], vendors:[], users:[], reports:[], settings:[] },
   };
-
-  const InputRow = ({label, fkey, type="text", req, max}) => (
-    <div>
-      <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:ferr[fkey]?"#DC2626":"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>{label}{req&&<span style={{color:"#DB2648"}}> *</span>}</label>
-      <input type={type} value={f[fkey]||""} maxLength={max}
-        onChange={e=>{ const v=max?e.target.value.replace(/[^0-9]/g,"").slice(0,max):e.target.value; setF(p=>({...p,[fkey]:v})); if(ferr[fkey])setFerr(p=>({...p,[fkey]:undefined})); }}
-        style={{width:"100%",padding:"10px 12px",border:`1.5px solid ${ferr[fkey]?"#FCA5A5":"#E2E8F0"}`,borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",boxSizing:"border-box"}}
-        onFocus={e=>e.target.style.borderColor="#DB2648"} onBlur={e=>e.target.style.borderColor=ferr[fkey]?"#FCA5A5":"#E2E8F0"}/>
-      {ferr[fkey]&&<p style={{fontFamily:"'Inter',sans-serif",fontSize:11.5,color:"#DC2626",marginTop:3}}>{ferr[fkey]}</p>}
-    </div>
-  );
-
-  const SelectRow = ({label, fkey, opts}) => (
-    <div>
-      <label style={{display:"block",fontFamily:"'Inter',sans-serif",fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:".5px",marginBottom:5}}>{label}</label>
-      <select value={f[fkey]||""} onChange={e=>setF(p=>({...p,[fkey]:e.target.value}))}
-        style={{width:"100%",padding:"10px 12px",border:"1.5px solid #E2E8F0",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13.5,outline:"none",appearance:"none",background:"#fff url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' fill='none' stroke='%2394A3B8' stroke-width='1.7'%3E%3Cpath d='M1 1l4.5 4.5L10 1'/%3E%3C/svg%3E\") no-repeat right 12px center",boxSizing:"border-box",cursor:"pointer"}}>
-        {opts.map(([v,l])=><option key={v} value={v}>{l}</option>)}
-      </select>
-    </div>
-  );
 
   return (
     <div style={{animation:"fadeUp .18s ease"}}>
@@ -3130,13 +3235,13 @@ function AdminUsersPage() {
       {showCreate && (
         <AdminModal title="Create New User" onClose={()=>{setShowCreate(false);setFerr({});}} width={560}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            <InputRow label="Full Name" fkey="name" req/>
-            <InputRow label="Phone" fkey="phone" max={10}/>
-            <InputRow label="Email" fkey="email" type="email" req/>
-            <InputRow label="Password" fkey="password" type="password" req/>
-            <SelectRow label="Role" fkey="role" opts={Object.entries(ROLES).map(([k,v])=>[k,`${v.icon} ${v.label}`])}/>
-            <SelectRow label="Branch" fkey="branch" opts={BRANCHES.map(b=>[b,b])}/>
-            <SelectRow label="Status" fkey="status" opts={[["active","Active"],["inactive","Inactive"]]}/>
+            <InputRow label="Full Name" fkey="name" req f={f} setF={setF} ferr={ferr} setFerr={setFerr}/>
+            <InputRow label="Phone" fkey="phone" max={10} f={f} setF={setF} ferr={ferr} setFerr={setFerr}/>
+            <InputRow label="Email" fkey="email" type="email" req f={f} setF={setF} ferr={ferr} setFerr={setFerr}/>
+            <InputRow label="Password" fkey="password" type="password" req f={f} setF={setF} ferr={ferr} setFerr={setFerr}/>
+            <SelectRow label="Role" fkey="role" opts={Object.entries(ROLES).map(([k,v])=>[k,`${v.icon} ${v.label}`])} f={f} setF={setF}/>
+            <SelectRow label="Branch" fkey="branch" opts={BRANCHES.map(b=>[b,b])} f={f} setF={setF}/>
+            <SelectRow label="Status" fkey="status" opts={[["active","Active"],["inactive","Inactive"]]} f={f} setF={setF}/>
           </div>
           <div style={{marginTop:12,padding:"10px 14px",background:"#F0F9FF",border:"1px solid #BAE6FD",borderRadius:9}}>
             <p style={{fontFamily:"'Inter',sans-serif",fontSize:12,color:"#0369A1"}}>ℹ️ Default permissions for the selected role will be applied automatically. You can customise them via the Perms button after creation.</p>
@@ -3152,11 +3257,11 @@ function AdminUsersPage() {
       {editing && (
         <AdminModal title={`Edit User — ${editing.name}`} onClose={()=>{setEditing(null);setFerr({});}} width={520}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-            <InputRow label="Full Name" fkey="name" req/>
-            <InputRow label="Phone" fkey="phone" max={10}/>
-            <SelectRow label="Role" fkey="role" opts={Object.entries(ROLES).map(([k,v])=>[k,`${v.icon} ${v.label}`])}/>
-            <SelectRow label="Branch" fkey="branch" opts={BRANCHES.map(b=>[b,b])}/>
-            <SelectRow label="Status" fkey="status" opts={[["active","Active"],["inactive","Inactive"],["suspended","Suspended"]]}/>
+            <InputRow label="Full Name" fkey="name" req f={f} setF={setF} ferr={ferr} setFerr={setFerr}/>
+            <InputRow label="Phone" fkey="phone" max={10} f={f} setF={setF} ferr={ferr} setFerr={setFerr}/>
+            <SelectRow label="Role" fkey="role" opts={Object.entries(ROLES).map(([k,v])=>[k,`${v.icon} ${v.label}`])} f={f} setF={setF}/>
+            <SelectRow label="Branch" fkey="branch" opts={BRANCHES.map(b=>[b,b])} f={f} setF={setF}/>
+            <SelectRow label="Status" fkey="status" opts={[["active","Active"],["inactive","Inactive"],["suspended","Suspended"]]} f={f} setF={setF}/>
           </div>
           <div style={{display:"flex",gap:10,justifyContent:"flex-end",paddingTop:16,borderTop:"1px solid #F1F5F9",marginTop:16}}>
             <button onClick={()=>{setEditing(null);setFerr({});}} style={{padding:"9px 20px",background:"#F1F5F9",color:"#475569",border:"none",borderRadius:9,fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,cursor:"pointer"}}>Cancel</button>
