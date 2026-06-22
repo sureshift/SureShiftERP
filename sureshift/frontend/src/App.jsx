@@ -1415,14 +1415,22 @@ const fmt = n => { if(!n)return"₹0"; if(n>=10000000)return`₹${(n/10000000).t
 // ──────────────────────────────────────────────────────────────────────────────
 function SuperAdminDash() {
   const { user } = useAppAuth();
-  const { items:enqs,  loading:eL } = useCollection("enquiries",  { sort:"-created", perPage:500, realtime:true });
-  const { items:cfrs,  loading:cL } = useCollection("cfr",        { sort:"-created", perPage:500, realtime:true });
-  const { items:invs,  loading:iL } = useCollection("invoices",   { sort:"-created", perPage:500 });
-  const { items:vens,  loading:vL } = useCollection("vendors",    { sort:"-created" });
-  const { items:users, loading:uL } = useCollection("users",      { sort:"-created" });
-  const { items:pReqs, loading:pL } = useCollection("partner_requests", { sort:"-created", filter:`status="pending"` });
+  const toast = useToast();
+  const { items:enqs,  loading:eL, error:eErr } = useCollection("enquiries",  { sort:"-created", perPage:500, realtime:true });
+  const { items:cfrs,  loading:cL, error:cErr } = useCollection("cfr",        { sort:"-created", perPage:500, realtime:true });
+  const { items:invs,  loading:iL, error:iErr } = useCollection("invoices",   { sort:"-created", perPage:500 });
+  const { items:vens,  loading:vL, error:vErr } = useCollection("vendors",    { sort:"-created" });
+  const { items:users, loading:uL, error:uErr } = useCollection("users",      { sort:"-created" });
+  const { items:pReqs, loading:pL, error:pErr } = useCollection("partner_requests", { sort:"-created", filter:`status="pending"` });
 
-  // collection errors are shown as empty states, not toasts
+  // Show error toasts only for genuine failures (auth errors suppressed in useCollection)
+  useEffect(() => {
+    const errs = [
+      ["Enquiries", eErr], ["Bookings", cErr], ["Invoices", iErr],
+      ["Vendors", vErr], ["Users", uErr], ["Partner requests", pErr],
+    ].filter(([, e]) => e);
+    errs.forEach(([label, e]) => toast(`Failed to load ${label}: ${e}`, "error", 6000));
+  }, [eErr, cErr, iErr, vErr, uErr, pErr]);
 
   const totalRev    = cfrs.reduce((s,c)=>s+(c.grand_total||0),0);
   const collected   = cfrs.reduce((s,c)=>s+(c.total_paid||0),0);

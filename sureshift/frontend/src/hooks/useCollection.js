@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import pb from "../lib/pb.js";
 
 export function useCollection(collectionName, options = {}) {
@@ -18,53 +18,79 @@ export function useCollection(collectionName, options = {}) {
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
 
+  // Track whether this hook instance is still mounted
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
   const refresh = useCallback(async () => {
+    // Don't fetch if not enabled or user not logged in
     if (!enabled || !pb.authStore.isValid) {
       setLoading(false);
+      setItems([]);
       return;
     }
+
     setLoading(true);
     setError(null);
+
     try {
       const res = await pb.collection(collectionName)
         .getList(page, perPage, { filter, sort, expand });
-      setItems(res.items);
-      setTotalItems(res.totalItems);
-      setTotalPages(res.totalPages);
+
+      // Only update state if still mounted AND still logged in
+      if (mountedRef.current && pb.authStore.isValid) {
+        setItems(res.items);
+        setTotalItems(res.totalItems);
+        setTotalPages(res.totalPages);
+      }
     } catch (err) {
-      // Silently ignore auth errors (401/403) and aborts — these happen
-      // naturally during logout and should not show error toasts.
+      if (!mountedRef.current) return; // unmounted — ignore completely
+
       const status = err?.status || err?.response?.code || 0;
-      if (
-        err.name === "AbortError" ||
-        !pb.authStore.isValid ||
-        status === 401 ||
-        status === 403
-      ) {
+
+      // Suppress auth errors — these are expected during logout
+      if (!pb.authStore.isValid || status === 401 || status === 403 || err.name === "AbortError") {
         setItems([]);
         setError(null);
       } else {
-        setError(err.message || "Fetch failed");
+        setError(err.message || "Failed to load data");
       }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   }, [collectionName, filter, sort, expand, page, perPage, enabled]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
+  // Subscribe to auth changes — clear data immediately on logout
+  useEffect(() => {
+    const unsub = pb.authStore.onChange((token, model) => {
+      if (!model && mountedRef.current) {
+        // User logged out — clear all data immediately, stop loading
+        setItems([]);
+        setTotalItems(0);
+        setTotalPages(0);
+        setError(null);
+        setLoading(false);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // Realtime subscription
   useEffect(() => {
     if (!realtime || !enabled || !pb.authStore.isValid) return;
     let unsub;
     pb.collection(collectionName).subscribe("*", e => {
-      if (!pb.authStore.isValid) return;
+      if (!mountedRef.current || !pb.authStore.isValid) return;
       if (e.action === "create") setItems(d => [e.record, ...d]);
       if (e.action === "update") setItems(d => d.map(r => r.id === e.record.id ? e.record : r));
       if (e.action === "delete") setItems(d => d.filter(r => r.id !== e.record.id));
     }).then(u => { unsub = u; }).catch(() => {});
-    return () => {
-      if (unsub) try { unsub(); } catch (_) {}
-    };
+    return () => { if (unsub) try { unsub(); } catch (_) {} };
   }, [collectionName, realtime, enabled]);
 
   return { items, totalItems, totalPages, loading, error, refresh };
