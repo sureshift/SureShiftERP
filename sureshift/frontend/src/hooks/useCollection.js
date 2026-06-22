@@ -1,9 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import pb from "../lib/pb.js";
 
-/**
- * useCollection — fetch a PocketBase collection with optional realtime updates
- */
 export function useCollection(collectionName, options = {}) {
   const {
     filter   = "",
@@ -22,13 +19,12 @@ export function useCollection(collectionName, options = {}) {
   const [error,      setError]      = useState(null);
 
   const refresh = useCallback(async () => {
-    // Never fetch if disabled or user not authenticated
     if (!enabled || !pb.authStore.isValid) {
       setLoading(false);
-      setItems([]);
       return;
     }
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
       const res = await pb.collection(collectionName)
         .getList(page, perPage, { filter, sort, expand });
@@ -36,9 +32,17 @@ export function useCollection(collectionName, options = {}) {
       setTotalItems(res.totalItems);
       setTotalPages(res.totalPages);
     } catch (err) {
-      // Suppress errors during logout (token cleared) or abort
-      if (err.name === "AbortError" || !pb.authStore.isValid) {
-        setItems([]); setError(null);
+      // Silently ignore auth errors (401/403) and aborts — these happen
+      // naturally during logout and should not show error toasts.
+      const status = err?.status || err?.response?.code || 0;
+      if (
+        err.name === "AbortError" ||
+        !pb.authStore.isValid ||
+        status === 401 ||
+        status === 403
+      ) {
+        setItems([]);
+        setError(null);
       } else {
         setError(err.message || "Fetch failed");
       }
@@ -49,25 +53,23 @@ export function useCollection(collectionName, options = {}) {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  // Realtime subscription — only when authenticated
   useEffect(() => {
     if (!realtime || !enabled || !pb.authStore.isValid) return;
     let unsub;
     pb.collection(collectionName).subscribe("*", e => {
-      if (!pb.authStore.isValid) return; // ignore events after logout
+      if (!pb.authStore.isValid) return;
       if (e.action === "create") setItems(d => [e.record, ...d]);
       if (e.action === "update") setItems(d => d.map(r => r.id === e.record.id ? e.record : r));
       if (e.action === "delete") setItems(d => d.filter(r => r.id !== e.record.id));
     }).then(u => { unsub = u; }).catch(() => {});
-    return () => { if (unsub) try { unsub(); } catch(_) {} };
+    return () => {
+      if (unsub) try { unsub(); } catch (_) {}
+    };
   }, [collectionName, realtime, enabled]);
 
   return { items, totalItems, totalPages, loading, error, refresh };
 }
 
-/**
- * useMutation — create / update / delete with loading state
- */
 export function useMutation(collectionName) {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
@@ -95,9 +97,6 @@ export function useMutation(collectionName) {
   };
 }
 
-/**
- * useSettings — loads all app_settings records into a key→value map
- */
 export function useSettings() {
   const [settings, setSettings] = useState({});
   const [loading,  setLoading]  = useState(true);
