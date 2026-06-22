@@ -22,7 +22,12 @@ export function useCollection(collectionName, options = {}) {
   const [error,      setError]      = useState(null);
 
   const refresh = useCallback(async () => {
-    if (!enabled) return;
+    // Never fetch if disabled or user not authenticated
+    if (!enabled || !pb.authStore.isValid) {
+      setLoading(false);
+      setItems([]);
+      return;
+    }
     setLoading(true); setError(null);
     try {
       const res = await pb.collection(collectionName)
@@ -31,7 +36,12 @@ export function useCollection(collectionName, options = {}) {
       setTotalItems(res.totalItems);
       setTotalPages(res.totalPages);
     } catch (err) {
-      if (err.name !== "AbortError") setError(err.message || "Fetch failed");
+      // Suppress errors during logout (token cleared) or abort
+      if (err.name === "AbortError" || !pb.authStore.isValid) {
+        setItems([]); setError(null);
+      } else {
+        setError(err.message || "Fetch failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -39,16 +49,17 @@ export function useCollection(collectionName, options = {}) {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  // Realtime subscription
+  // Realtime subscription — only when authenticated
   useEffect(() => {
-    if (!realtime || !enabled) return;
+    if (!realtime || !enabled || !pb.authStore.isValid) return;
     let unsub;
     pb.collection(collectionName).subscribe("*", e => {
+      if (!pb.authStore.isValid) return; // ignore events after logout
       if (e.action === "create") setItems(d => [e.record, ...d]);
       if (e.action === "update") setItems(d => d.map(r => r.id === e.record.id ? e.record : r));
       if (e.action === "delete") setItems(d => d.filter(r => r.id !== e.record.id));
-    }).then(u => { unsub = u; });
-    return () => { if (unsub) unsub(); };
+    }).then(u => { unsub = u; }).catch(() => {});
+    return () => { if (unsub) try { unsub(); } catch(_) {} };
   }, [collectionName, realtime, enabled]);
 
   return { items, totalItems, totalPages, loading, error, refresh };
@@ -92,6 +103,7 @@ export function useSettings() {
   const [loading,  setLoading]  = useState(true);
 
   useEffect(() => {
+    if (!pb.authStore.isValid) { setLoading(false); return; }
     pb.collection("app_settings").getFullList()
       .then(rows => setSettings(Object.fromEntries(rows.map(r => [r.key, r.value]))))
       .catch(() => {})

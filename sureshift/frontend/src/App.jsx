@@ -1424,6 +1424,8 @@ function SuperAdminDash() {
   const { items:pReqs, loading:pL, error:pErr } = useCollection("partner_requests", { sort:"-created", filter:`status="pending"` });
 
   useEffect(() => {
+    // Only show errors when user is still authenticated — suppress post-logout noise
+    if (!pb.authStore.isValid) return;
     const errs = [
       ["Enquiries", eErr], ["Bookings", cErr], ["Invoices", iErr],
       ["Vendors", vErr], ["Users", uErr], ["Partner requests", pErr],
