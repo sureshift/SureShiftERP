@@ -1,45 +1,38 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
-  // ── Set collection rules using the same proven pattern as migration 001 ──
-  // Migration 004 (old) used dynamic string-wrapping that broke rule syntax.
-  // This migration replaces every affected collection's rules explicitly.
+  var A = "@request.auth.id != ''";
+  var cols = [
+    "enquiries","vendors","cfr","invoices","surveys",
+    "quotations","operations","tickets","users","comms_log","app_settings"
+  ];
 
-  function fixRules(name, list, view, create, update, del) {
+  cols.forEach(function(name) {
     try {
-      var c = app.findCollectionByNameOrId(name);
-      c.listRule   = list;
-      c.viewRule   = view;
-      c.createRule = create;
-      c.updateRule = update;
-      c.deleteRule = del;
-      app.save(c);
-    } catch (e) {}
+      app.db().newQuery(
+        "UPDATE _collections SET " +
+        "list_rule={:a},view_rule={:a},create_rule={:a},update_rule={:a},delete_rule={:a} " +
+        "WHERE name={:n}"
+      ).bind({a:A,n:name}).execute();
+    } catch(e) {
+      app.logger().error("[SS] "+name+": "+String(e));
+    }
+  });
+
+  try {
+    app.db().newQuery(
+      "UPDATE _collections SET " +
+      "list_rule={:a},view_rule={:a},create_rule='',update_rule={:a},delete_rule={:a} " +
+      "WHERE name='partner_requests'"
+    ).bind({a:A}).execute();
+  } catch(e) {
+    app.logger().error("[SS] partner_requests: "+String(e));
   }
 
-  var A = "@request.auth.id != ''";
-
-  fixRules("enquiries",  A, A, A, A, A);
-  fixRules("vendors",    A, A, A, A, A);
-  fixRules("cfr",        A, A, A, A, A);
-  fixRules("invoices",   A, A, A, A, A);
-  fixRules("surveys",    A, A, A, A, A);
-  fixRules("quotations", A, A, A, A, A);
-  fixRules("operations", A, A, A, A, A);
-  fixRules("tickets",    A, A, A, A, A);
-  fixRules("users",      A, A, A, A, A);
-  fixRules("comms_log",  A, A, A, A, A);
-  fixRules("app_settings", A, A, A, A, A);
-
-  // partner_requests: public create for signup form
-  fixRules("partner_requests", A, A, "", A, A);
-
-  // Ensure admin@sureshift.in has super_admin role
   try {
-    var admin = app.findFirstRecordByFilter("users", "email = 'admin@sureshift.in'");
-    admin.set("role", "super_admin");
-    admin.set("status", "active");
-    if (!admin.get("branch")) admin.set("branch", "NDLH");
-    app.save(admin);
-  } catch (e) {}
+    app.db().newQuery(
+      "UPDATE users SET role='super_admin',status='active' WHERE email='admin@sureshift.in'"
+    ).execute();
+  } catch(e) {}
 
+  app.logger().info("[SS] Migration 004 done");
 }, (app) => {});
