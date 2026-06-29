@@ -1,6 +1,10 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
+  // Direct SQL using confirmed camelCase column names from .schema _collections:
+  // listRule, viewRule, createRule, updateRule, deleteRule
+
   var A = "@request.auth.id != ''";
+
   var cols = [
     "enquiries","vendors","cfr","invoices","surveys",
     "quotations","operations","tickets","users","comms_log","app_settings"
@@ -10,29 +14,25 @@ migrate((app) => {
     try {
       app.db().newQuery(
         "UPDATE _collections SET " +
-        "list_rule={:a},view_rule={:a},create_rule={:a},update_rule={:a},delete_rule={:a} " +
+        "listRule={:a},viewRule={:a},createRule={:a},updateRule={:a},deleteRule={:a} " +
         "WHERE name={:n}"
-      ).bind({a:A,n:name}).execute();
+      ).bind({a:A, n:name}).execute();
     } catch(e) {
-      app.logger().error("[SS] "+name+": "+String(e));
+      app.logger().error("[SS] rule fix failed for " + name + ": " + String(e));
     }
   });
 
+  // partner_requests: empty createRule so public signup form works
   try {
     app.db().newQuery(
       "UPDATE _collections SET " +
-      "list_rule={:a},view_rule={:a},create_rule='',update_rule={:a},delete_rule={:a} " +
+      "listRule={:a},viewRule={:a},createRule='',updateRule={:a},deleteRule={:a} " +
       "WHERE name='partner_requests'"
     ).bind({a:A}).execute();
   } catch(e) {
-    app.logger().error("[SS] partner_requests: "+String(e));
+    app.logger().error("[SS] rule fix failed for partner_requests: " + String(e));
   }
 
-  try {
-    app.db().newQuery(
-      "UPDATE users SET role='super_admin',status='active' WHERE email='admin@sureshift.in'"
-    ).execute();
-  } catch(e) {}
+  app.logger().info("[SS] Migration 004 complete - collection rules fixed");
 
-  app.logger().info("[SS] Migration 004 done");
 }, (app) => {});
