@@ -61,6 +61,25 @@ migrate((app) => {
     throw err;
   }
 
+  // partner_requests must remain publicly creatable because the login page
+  // contains a public partner registration form. Reading/modifying requests
+  // still requires authentication.
+  try {
+    app.db().newQuery(
+      "UPDATE _collections SET " +
+      "listRule={:auth}, " +
+      "viewRule={:auth}, " +
+      "createRule='', " +
+      "updateRule={:auth}, " +
+      "deleteRule={:auth} " +
+      "WHERE name='partner_requests'"
+    ).bind({ auth: authenticated }).execute();
+  } catch (err) {
+    // The collection may not exist on older installations; don't fail the
+    // entire ERP migration in that case.
+    app.logger().warn("[SS] partner_requests rule repair skipped: " + String(err));
+  }
+
   app.logger().info("[SS] Migration 005 complete - ERP collection rules repaired");
 }, (app) => {
   // Intentionally no destructive rollback. The migration repairs security
