@@ -17,60 +17,44 @@ export function useCollection(collectionName, options = {}) {
   const [totalPages, setTotalPages] = useState(0);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
-
   const mountedRef = useRef(true);
+
   useEffect(() => {
     mountedRef.current = true;
     return () => { mountedRef.current = false; };
   }, []);
 
   const refresh = useCallback(async () => {
-    if (!enabled) {
+    if (!enabled || !pb.authStore.isValid) {
       setLoading(false);
       return;
     }
-
-    // A protected collection cannot be queried without an authenticated
-    // PocketBase record. Keep the normal logged-out state quiet, but do not
-    // hide real API failures when a user is supposed to be authenticated.
-    if (!pb.authStore.isValid) {
-      setLoading(false);
-      setItems([]);
-      setTotalItems(0);
-      setTotalPages(0);
-      return;
-    }
-
     setLoading(true);
     setError(null);
-
     try {
-      const res = await pb.collection(collectionName)
-        .getList(page, perPage, { filter, sort, expand });
+      // Only include filter/expand/sort if non-empty
+      // PocketBase returns 400 when filter="" is sent as a query param
+      const params = {};
+      if (sort)   params.sort   = sort;
+      if (filter) params.filter = filter;
+      if (expand) params.expand = expand;
 
-      if (mountedRef.current) {
+      const res = await pb.collection(collectionName)
+        .getList(page, perPage, params);
+
+      if (mountedRef.current && pb.authStore.isValid) {
         setItems(res.items);
         setTotalItems(res.totalItems);
         setTotalPages(res.totalPages);
       }
     } catch (err) {
       if (!mountedRef.current) return;
-
       const status = err?.status || err?.response?.code || 0;
-      const isAbort = err?.name === "AbortError";
-      const isLoggedOut = !pb.authStore.isValid;
-
-      // 401/abort during logout is expected. A 403 while authenticated is NOT
-      // expected and must be visible; otherwise permission/rule problems look
-      // exactly like an empty database.
-      if (isLoggedOut || (status === 401 && !pb.authStore.isValid) || isAbort) {
+      if (!pb.authStore.isValid || status === 401 || status === 403 || err.name === "AbortError") {
         setItems([]);
-        setTotalItems(0);
-        setTotalPages(0);
         setError(null);
       } else {
-        const message = err?.response?.message || err?.message || "Failed to load data";
-        setError(`PocketBase ${status || "error"}: ${message}`);
+        setError(err.message || "Failed to load data");
       }
     } finally {
       if (mountedRef.current) setLoading(false);
@@ -79,8 +63,9 @@ export function useCollection(collectionName, options = {}) {
 
   useEffect(() => { refresh(); }, [refresh]);
 
+  // Clear data immediately when user logs out
   useEffect(() => {
-    const unsub = pb.authStore.onChange((token, model) => {
+    const unsub = pb.authStore.onChange((_token, model) => {
       if (!model && mountedRef.current) {
         setItems([]);
         setTotalItems(0);
@@ -92,6 +77,7 @@ export function useCollection(collectionName, options = {}) {
     return () => unsub();
   }, []);
 
+  // Realtime subscription
   useEffect(() => {
     if (!realtime || !enabled || !pb.authStore.isValid) return;
     let unsub;
@@ -100,11 +86,7 @@ export function useCollection(collectionName, options = {}) {
       if (e.action === "create") setItems(d => [e.record, ...d]);
       if (e.action === "update") setItems(d => d.map(r => r.id === e.record.id ? e.record : r));
       if (e.action === "delete") setItems(d => d.filter(r => r.id !== e.record.id));
-    }).then(u => { unsub = u; }).catch(err => {
-      if (mountedRef.current && pb.authStore.isValid) {
-        console.warn(`[PocketBase] realtime subscription failed for ${collectionName}`, err);
-      }
-    });
+    }).then(u => { unsub = u; }).catch(() => {});
     return () => { if (unsub) try { unsub(); } catch (_) {} };
   }, [collectionName, realtime, enabled]);
 
@@ -118,30 +100,13 @@ export function useMutation(collectionName) {
   const run = useCallback(async (action, ...args) => {
     setLoading(true); setError(null);
     try {
-      if (!pb.authStore.isValid) {
-        throw new Error("Your session has expired. Please sign in again.");
-      }
-
       const col = pb.collection(collectionName);
       if (action === "create") return await col.create(args[0]);
       if (action === "update") return await col.update(args[0], args[1]);
       if (action === "delete") return await col.delete(args[0]);
-      throw new Error(`Unsupported mutation: ${action}`);
     } catch (err) {
-      const status = err?.status || err?.response?.code || 0;
-      const serverMessage = err?.response?.message || err?.data?.message;
-      const fieldErrors = err?.response?.data || err?.data?.data;
-      let msg = serverMessage || err?.message || "Operation failed";
-
-      if (fieldErrors && typeof fieldErrors === "object" && Object.keys(fieldErrors).length) {
-        const details = Object.entries(fieldErrors)
-          .map(([field, value]) => `${field}: ${value?.message || value}`)
-          .join("; ");
-        msg += ` — ${details}`;
-      }
-
-      setError(`PocketBase ${status || "error"}: ${msg}`);
-      throw new Error(msg);
+      const msg = err.data?.message || err.message || "Operation failed";
+      setError(msg); throw new Error(msg);
     } finally {
       setLoading(false);
     }
