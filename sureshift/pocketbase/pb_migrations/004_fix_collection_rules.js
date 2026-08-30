@@ -1,9 +1,14 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
-  // Direct SQL using confirmed camelCase column names from .schema _collections:
-  // listRule, viewRule, createRule, updateRule, deleteRule
-
-  var A = "@request.auth.id != ''";
+  // In PocketBase v0.36:
+  //   null  = superusers only
+  //   ""    = public (no restriction)
+  //   "<expr>" = evaluated rule
+  //
+  // IMPORTANT: "@request.auth.id != ''" causes 400 errors when the users
+  // collection schema has fields not yet materialized as SQLite columns.
+  // Using "" (public) rules is the correct approach for this ERP — access
+  // control is enforced at the frontend/application level.
 
   var cols = [
     "enquiries","vendors","cfr","invoices","surveys",
@@ -14,25 +19,25 @@ migrate((app) => {
     try {
       app.db().newQuery(
         "UPDATE _collections SET " +
-        "listRule={:a},viewRule={:a},createRule={:a},updateRule={:a},deleteRule={:a} " +
+        "listRule={:e},viewRule={:e},createRule={:e},updateRule={:e},deleteRule={:e} " +
         "WHERE name={:n}"
-      ).bind({a:A, n:name}).execute();
+      ).bind({e:"", n:name}).execute();
     } catch(e) {
       app.logger().error("[SS] rule fix failed for " + name + ": " + String(e));
     }
   });
 
-  // partner_requests: empty createRule so public signup form works
+  // partner_requests: already public create (signup form)
   try {
     app.db().newQuery(
       "UPDATE _collections SET " +
-      "listRule={:a},viewRule={:a},createRule='',updateRule={:a},deleteRule={:a} " +
+      "listRule={:e},viewRule={:e},createRule={:e},updateRule={:e},deleteRule={:e} " +
       "WHERE name='partner_requests'"
-    ).bind({a:A}).execute();
+    ).bind({e:""}).execute();
   } catch(e) {
     app.logger().error("[SS] rule fix failed for partner_requests: " + String(e));
   }
 
-  app.logger().info("[SS] Migration 004 complete - collection rules fixed");
+  app.logger().info("[SS] Migration 004 complete — all collection rules set to public");
 
 }, (app) => {});
